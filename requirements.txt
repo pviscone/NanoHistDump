@@ -1,0 +1,3 @@
+coffea
+numpy
+typer[all]
