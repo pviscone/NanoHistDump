@@ -1,3 +1,4 @@
 coffea
 numpy
 typer[all]
+PyYAML
