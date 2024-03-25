@@ -1,0 +1,14 @@
+dataset:
+    input_dir: /data/pviscone/PhD-notes/submodules/NanoHistDump/root_files
+    out_dir: /data/pviscone/PhD-notes/submodules/NanoHistDump/out
+    tree_name: Events
+
+samples:
+    DoubleElectrons:
+        input_sample_dir: DoubleElectrons
+
+    MinBias:
+        input_sample_dir: MinBias
+
+scheme:
+    "CaloEGammaCrystalClustersGCT": "CryClu"
