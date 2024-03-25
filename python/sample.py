@@ -58,9 +58,11 @@ class Sample(dak.lib.core.Array):
         # Try except needed due to the caching mechanism of coffea
         with suppress(Exception):
             self[new_name] = self[old_name]
-            del self[old_name]
+            #del self[old_name]
 
-    #! Understand how to implement it without breaking everything. Without deleting old collections name, they will be in the outfile if a full sample is requested
+    #! Understand how to implement it without breaking everything. Without deleting old collections name, they will be in the outfile if a full sample is requested.
+    #Maybe just try to replace the field instead of adding a new and deleting the old one
+    """
     def __delitem__(self, key):
         # self.layout._fields.remove(key)
 
@@ -70,6 +72,7 @@ class Sample(dak.lib.core.Array):
             if collection != key:
                 with suppress(Exception):
                     self[collection].layout._content._fields = all_vars[collection]  # noqa: SLF001
+    """
 
     def add_collection(self, collection_name, /, ak_array=None):
         if collection_name in self.fields:
