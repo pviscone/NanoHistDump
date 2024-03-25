@@ -16,21 +16,24 @@ from python.hist_struct import Hist
 NanoAODSchema.warn_missing_crossrefs = False
 
 
-def sample_generator(dataset_dict):
+def sample_generator(dataset_dict, nevents):
     base_path = dataset_dict["dataset"]["input_dir"]
     for sample in dataset_dict["samples"]:
         sample_dir = dataset_dict["samples"][sample]["input_sample_dir"]
         path = os.path.join(base_path, sample_dir)
-        yield Sample(sample, path, dataset_dict["dataset"]["tree_name"], dataset_dict["scheme"])
+        yield Sample(sample, path, dataset_dict["dataset"]["tree_name"], dataset_dict["scheme"], nevents=nevents)
 
 
 class Sample(dak.lib.core.Array):
-    def __init__(self, name, path, tree_name, /, scheme_dict=None):
+    def __init__(self, name, path, tree_name, /, scheme_dict=None, nevents=None):
         list_files = glob.glob(os.path.join(path, "*.root"))
         events = NanoEventsFactory.from_root(
             [{file: tree_name} for file in list_files],
             schemaclass=NanoAODSchema,
         ).events()
+
+        if nevents is not None:
+            events = events[:nevents]
 
         self.sample_name = name
         self.hist_file = None
@@ -58,10 +61,10 @@ class Sample(dak.lib.core.Array):
         # Try except needed due to the caching mechanism of coffea
         with suppress(Exception):
             self[new_name] = self[old_name]
-            #del self[old_name]
+            # del self[old_name]
 
     #! Understand how to implement it without breaking everything. Without deleting old collections name, they will be in the outfile if a full sample is requested.
-    #Maybe just try to replace the field instead of adding a new and deleting the old one
+    # Maybe just try to replace the field instead of adding a new and deleting the old one
     """
     def __delitem__(self, key):
         # self.layout._fields.remove(key)

@@ -42,9 +42,7 @@ def NanoHistDump(
 
     cfg = importlib.import_module(config_file.split(".py")[0].replace("/", "."))
 
-    for sample in sample_generator(dataset):
-        if nevents is not None:
-            sample = sample[:nevents]  # noqa: PLW2901
+    for sample in sample_generator(dataset,nevents):
         cfg.define(sample)
         sample.create_outfile(dataset["dataset"]["out_dir"])
         sample.add_hists(cfg.hists)
