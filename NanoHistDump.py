@@ -47,7 +47,7 @@ def NanoHistDump(
         pprint(
             f"------------------------- #{idx+1}/{len(dataset['samples'])} {sample.sample_name}-------------------------"
         )
-        cfg.define(sample)
+        sample=cfg.define(sample)
         sample.create_outfile(dataset["dataset"]["out_dir"])
         sample.add_hists(cfg.hists)
 
