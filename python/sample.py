@@ -1,7 +1,7 @@
 # %%
 import glob
 import os
-from contextlib import suppress
+import warnings
 
 import awkward as ak
 import dask_awkward as dak
@@ -14,9 +14,23 @@ from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
 from python.hist_struct import Hist
 
 NanoAODSchema.warn_missing_crossrefs = False
+warnings.filterwarnings("ignore", module="coffea.*")
 
 
-def sample_generator(dataset_dict, nevents):
+def sample_generator(dataset_dict: dict, nevents: int | None = None):
+    """
+    generator that loops over the samples in the dataset and yields a Sample object for each sample
+
+    Args:
+    ----
+        dataset_dict (_type_): dataset dict parsed from the dataset.yaml file
+        nevents (int): number of events to be processed (first nevents events in the sample). Defaults to None.
+
+    Yields:
+    ------
+        sample: sample object
+
+    """
     base_path = dataset_dict["dataset"]["input_dir"]
     for sample in dataset_dict["samples"]:
         sample_dir = dataset_dict["samples"][sample]["input_sample_dir"]
@@ -25,7 +39,32 @@ def sample_generator(dataset_dict, nevents):
 
 
 class Sample(dak.lib.core.Array):
-    def __init__(self, name, path, tree_name, /, scheme_dict=None, nevents=None):
+    """
+    Superset of the dask array class that contains the sample information and methods to manipulate it
+
+    """
+
+    def __init__(  # noqa: PLR0913
+        self,
+        name: str,
+        path: str,
+        tree_name: str,
+        /,
+        scheme_dict: dict[str, str] | None = None,
+        nevents: int | None = None,
+    ):
+        """
+        _summary_
+
+        Args:
+        ----
+            name (str): name of the sample
+            path (str): path of the folder that contains the root files
+            tree_name (str): name of the tree
+            scheme_dict (Dict[str], optional): Dict {old_name:new_name} to rename collections in the sample. The schemes are defined in the cfg python script. Defaults to None.
+            nevents (int, optional): number of events to be processed (first nevents events in the sample). Defaults to None.
+
+        """
         list_files = glob.glob(os.path.join(path, "*.root"))
         events = NanoEventsFactory.from_root(
             [{file: tree_name} for file in list_files],
@@ -44,40 +83,59 @@ class Sample(dak.lib.core.Array):
                 self._rename_collection(old_name, new_name)
 
     @property
-    def __len___(self):
+    def __len___(self) -> int:
+        """
+        Return the number of events in the sample
+
+        Returns
+        -------
+            int: number of event in the sample
+
+        """
         return dak.num(self, axis=0).compute()
 
     @property
-    def n(self):
+    def n(self) -> int:
+        """
+        Return the number of events in the sample
+
+        Returns
+        -------
+            int: number of event in the sample
+
+        """
         return len(self)
 
-    def _rename_collection(self, old_name, new_name):
+    def _rename_collection(self, old_name: str, new_name: str) -> None:
+        """
+        Rename a collection in the sample
+
+        Args:
+        ----
+            old_name (str): collection to be renamed
+            new_name (str): new name of the collection
+
+        """
         if new_name in self.fields:
             raise ValueError(
                 f"Collection {new_name} already exists. If you want to override it use __setitem__ method."
             )
         if old_name not in self.fields:
             raise ValueError(f"Collection {old_name} does not exist.")
-        # Try except needed due to the caching mechanism of coffea
-        with suppress(Exception):
-            self[new_name] = self[old_name]
-            # del self[old_name]
 
-    #! Understand how to implement it without breaking everything. Without deleting old collections name, they will be in the outfile if a full sample is requested.
-    # Maybe just try to replace the field instead of adding a new and deleting the old one
-    """
-    def __delitem__(self, key):
-        # self.layout._fields.remove(key)
+        idx = self.layout._fields.index(old_name)
+        self.layout._fields[idx] = new_name
 
-        all_vars = self.get_vars()
-        for collection in all_vars:
-            # God knows why it is needed but for the god sake don't touch it
-            if collection != key:
-                with suppress(Exception):
-                    self[collection].layout._content._fields = all_vars[collection]  # noqa: SLF001
-    """
+    def add_collection(self, collection_name: str, /, ak_array: ak.Array | None = None) -> None:
+        """
+        Add a new collection. It could be empty or filled with an awkward array
 
-    def add_collection(self, collection_name, /, ak_array=None):
+        Args:
+        ----
+            collection_name (`str`): name of the collection
+            ak_array (ak.Array | None, optional): awkward record to add as collection. If None it add an empty collection. Defaults to None.
+
+        """
         if collection_name in self.fields:
             raise ValueError(
                 f"Collection {collection_name} already exists. If you want to override it use __setitem__ method."
@@ -91,18 +149,46 @@ class Sample(dak.lib.core.Array):
         else:
             self[collection_name] = ak_array
 
-    def get_vars(self, /, collection=None):
+    def get_vars(self, /, collection: str | None = None) -> list[str] | dict[str, list[str]]:
+        """
+        Returns the list of variables in the sample or in a specific collection
+
+        Args:
+        ----
+            collection (str | None, optional): name of the collection. If none it returns a dict with all the collections . Defaults to None.
+
+        Returns:
+        -------
+            list[str] | dict[str,list[str]]: list or dict of list containing all the variables in the sample or in a specific collection
+
+        """
         if collection is None:
             return {field: self[field].fields for field in self.fields}
         return self[collection].fields
 
-    def create_outfile(self, path):
+    def create_outfile(self, path: str) -> None:
+        """
+        Create a root file to store the histograms
+
+        Args:
+        ----
+            path (str): path of the folder where the root file will be created
+
+        """
         if self.hist_file is None:
             self.hist_file = uproot.recreate(os.path.join(path, f"{self.sample_name}.root"))
         else:
             print("Histogram already exists. Did nothing")
 
-    def add_hists(self, hists):
+    def add_hists(self, hists: list[Hist]) -> None:
+        """
+        Add histograms to the root file
+
+        Args:
+        ----
+            hists (list[Hist]): list of Hist object to be created
+
+        """
         if self.hist_file is None:
             raise ValueError("No histogram created. Create one first")
         for h in hists:
@@ -121,13 +207,13 @@ class Sample(dak.lib.core.Array):
             elif h.single_var:
                 self._add_hists(h)
 
-    def _add_hists(self, h):
+    def _add_hists(self, h: Hist) -> None:
         if h.dim == 1:
             self._add_hists_1d(h)
         elif h.dim == 2:
             self._add_hists_2d(h)
 
-    def _add_hists_1d(self, h):
+    def _add_hists_1d(self, h: Hist) -> None:
         data = self[h.collection_name][h.var_name]
         if data.ndim > 1:
             data = dak.flatten(data)
@@ -148,7 +234,7 @@ class Sample(dak.lib.core.Array):
         hist_obj.fill(data)
         self.hist_file[h.name] = hist_obj.compute()
 
-    def _add_hists_2d(self, h):
+    def _add_hists_2d(self, h: Hist) -> None:
         var1, var2 = h.var_name.split("_")
         data1 = self[h.collection_name][var1]
         data2 = self[h.collection_name][var2]
