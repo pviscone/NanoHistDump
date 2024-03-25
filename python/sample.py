@@ -10,6 +10,7 @@ import hist.dask as hda
 import numpy as np
 import uproot
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
+from rich import print as pprint
 
 from python.hist_struct import Hist
 
@@ -216,6 +217,7 @@ class Sample(dak.lib.core.Array):
                 self._add_hists(h)
 
     def _add_hists(self, h: Hist) -> None:
+        pprint(f"Creating hist {h.name}")
         if h.dim == 1:
             self._add_hists_1d(h)
         elif h.dim == 2:
@@ -243,7 +245,7 @@ class Sample(dak.lib.core.Array):
         self.hist_file[h.name] = hist_obj.compute()
 
     def _add_hists_2d(self, h: Hist) -> None:
-        var1, var2 = h.var_name.split("_")
+        var1, var2 = h.var_name.split("_vs_")
         data1 = self[h.collection_name][var1]
         data2 = self[h.collection_name][var2]
         if data1.ndim > 1:

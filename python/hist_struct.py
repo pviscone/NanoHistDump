@@ -58,7 +58,7 @@ class Hist:
         self.entire_sample = self.name == ""
         self.entire_collection = self.name.count("/") == 0 and self.name != ""
         self.single_var = self.name.count("/") == 1
-        self.dim = self.name.count("_") + 1
+        self.dim = self.name.count("_vs_") + 1
 
         self.collection_name = None
         self.var_name = None
