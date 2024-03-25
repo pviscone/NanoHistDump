@@ -13,3 +13,5 @@ samples:
 scheme:
     "CaloEGammaCrystalClustersGCT": "CryClu"
     "GenEl": "GenEle"
+    "DecTkBarrel": "Tk"
+    "TkEleL2": "TkEle"
