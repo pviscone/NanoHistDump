@@ -42,6 +42,14 @@ class Sample(dak.lib.core.Array):
     """
     Superset of the dask array class that contains the sample information and methods to manipulate it
 
+    Attributes
+    ----------
+    sample_name : str
+        name of the sample
+    hist_file : uproot.rootio.ROOTFile
+        root file to store the histograms
+
+
     """
 
     def __init__(  # noqa: PLR0913

@@ -3,6 +3,7 @@ import os
 
 import typer
 import yaml
+from rich import print as pprint
 
 from python.sample import sample_generator
 
@@ -42,7 +43,10 @@ def NanoHistDump(
 
     cfg = importlib.import_module(config_file.split(".py")[0].replace("/", "."))
 
-    for sample in sample_generator(dataset,nevents):
+    for idx, sample in enumerate(sample_generator(dataset, nevents)):
+        pprint(
+            f"------------------------- #{idx+1}/{len(dataset['samples'])} {sample.sample_name}-------------------------"
+        )
         cfg.define(sample)
         sample.create_outfile(dataset["dataset"]["out_dir"])
         sample.add_hists(cfg.hists)
