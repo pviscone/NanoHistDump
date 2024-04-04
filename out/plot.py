@@ -1,3 +1,4 @@
+
 # %%  # noqa: INP001
 import matplotlib.pyplot as plt
 import mplhep as hep
@@ -10,7 +11,11 @@ hep.style.use("CMS")
 filename = "DoubleElectrons.root"
 file = uproot.open(filename)
 
-objects = ["CryCluGenMatched", "TkGenMatched", "TkEleGenMatched", "TkCryCluGenMatch"]
+objects = ["CryCluGenMatched",
+           "TkGenMatched",
+           "TkEleGenMatched",
+           #"TkCryCluGenMatch"
+           ]
 
 
 def plot_efficiency(num, den, label, ax=None):
@@ -46,6 +51,7 @@ def plot(obj, var, ax=None):
 for var in ["pt", "eta"]:
     fig, ax = plt.subplots()
     for obj in objects:
+        print(obj)
         plot(obj, var, ax=ax)
     if var == "eta":
         ax.set_ylim(0, 1.4)
@@ -55,4 +61,29 @@ for var in ["pt", "eta"]:
             "Gen pT > 5 GeV",
             fontsize=20,
         )
+# %%
+def plot_n(file):
+    objs = ["CryCluGenMatchedAll", "TkGenMatchedAll", "TkEleGenMatchedAll"]
+    fig, ax = plt.subplots()
+
+    for obj in objs:
+        hep.histplot(file[f"n/{obj}"],label=obj,ax=ax,linewidth=2)
+
+
+    ax.grid()
+    ax.legend()
+    ax.set_xlabel("Number of objects")
+    ax.set_ylabel("Events")
+    ax.set_yscale("log")
+    import matplotlib.colors as colors
+
+    for obj in objs:
+        fig2, ax2 = plt.subplots()
+        hep.hist2dplot(file[f"n/{obj}Pt_vs_{obj}"], label=obj, ax=ax2, norm=colors.LogNorm(vmin=1, vmax=2000))
+        ax2.set_xlabel("Gen pT")
+        ax2.set_ylabel("Number of objects")
+        ax2.set_title(obj)
+
+
+plot_n(file)
 # %%
