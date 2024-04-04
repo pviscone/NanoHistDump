@@ -36,7 +36,7 @@ def sample_generator(dataset_dict: dict, nevents: int | None = None):
     for sample in dataset_dict["samples"]:
         sample_dir = dataset_dict["samples"][sample]["input_sample_dir"]
         path = os.path.join(base_path, sample_dir)
-        yield Sample(sample, path, dataset_dict["dataset"]["tree_name"], dataset_dict["scheme"], nevents=nevents)
+        yield Sample(sample, path=path, tree_name=dataset_dict["dataset"]["tree_name"], scheme_dict=dataset_dict["scheme"], nevents=nevents)
 
 
 class Sample(dak.lib.core.Array):
@@ -56,11 +56,12 @@ class Sample(dak.lib.core.Array):
     def __init__(  # noqa: PLR0913
         self,
         name: str,
-        path: str,
-        tree_name: str,
         /,
+        path: str | None = None,
+        tree_name: str | None = None,
         scheme_dict: dict[str, str] | None = None,
         nevents: int | None = None,
+        events: NanoEventsFactory | None = None,
     ):
         """
         _summary_
@@ -74,11 +75,12 @@ class Sample(dak.lib.core.Array):
             nevents (int, optional): number of events to be processed (first nevents events in the sample). Defaults to None.
 
         """
-        list_files = glob.glob(os.path.join(path, "*.root"))
-        events = NanoEventsFactory.from_root(
-            [{file: tree_name} for file in list_files],
-            schemaclass=NanoAODSchema,
-        ).events()
+        if events is None:
+            list_files = glob.glob(os.path.join(path, "*.root"))
+            events = NanoEventsFactory.from_root(
+                [{file: tree_name} for file in list_files],
+                schemaclass=NanoAODSchema,
+            ).events()
 
         if nevents is not None:
             events = events[:nevents]
@@ -91,8 +93,17 @@ class Sample(dak.lib.core.Array):
             for old_name, new_name in scheme_dict.items():
                 self._rename_collection(old_name, new_name)
 
+    def filter(self,mask):
+        awk=self[mask]
+        hist_file=self.hist_file
+        new_istance=self.__class__(self.sample_name,events=awk)
+        new_istance.hist_file=hist_file
+        return new_istance
+
+
+
     @property
-    def __len___(self) -> int:
+    def __len__(self) -> int:
         """
         Return the number of events in the sample
 
@@ -113,7 +124,7 @@ class Sample(dak.lib.core.Array):
             int: number of event in the sample
 
         """
-        return len(self)
+        return self.__len__
 
     def _rename_collection(self, old_name: str, new_name: str) -> None:
         """
@@ -151,9 +162,9 @@ class Sample(dak.lib.core.Array):
             )
 
         if ak_array is None:
-            ak_array = ak.Array([{}] * self.n)
+            self[collection_name] = dak.from_awkward(ak.Array([{}] * self.n), self.npartitions)
 
-        if "dask" not in str(type(ak_array)):
+        elif "dask" not in str(type(ak_array)):
             self[collection_name] = dak.from_awkward(ak_array, self.events.npartitions)
         else:
             self[collection_name] = ak_array
