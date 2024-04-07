@@ -97,6 +97,7 @@ class Sample:
                 if old_name not in lazy_events.fields:
                     raise ValueError(f"Collection {old_name} does not exist.")
                 self.events[new_name] = ak.with_name(lazy_events[old_name].compute(), "Momentum4D")
+                self.events[new_name].layout.content.parameters["collection_name"] = new_name
 
         else:
             self.events = events
