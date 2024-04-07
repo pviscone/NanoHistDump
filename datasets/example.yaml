@@ -2,6 +2,7 @@ dataset:
     input_dir: /data/pviscone/PhD-notes/submodules/NanoHistDump/root_files
     out_dir: /data/pviscone/PhD-notes/submodules/NanoHistDump/out
     tree_name: Events
+    tag: 131Xv3
 
 samples:
     DoubleElectrons:

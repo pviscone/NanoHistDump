@@ -39,6 +39,7 @@ def sample_generator(dataset_dict: dict, nevents: int | None = None):
         path = os.path.join(base_path, sample_dir)
         yield Sample(
             sample,
+            tag=dataset_dict["dataset"]["tag"],
             path=path,
             tree_name=dataset_dict["dataset"]["tree_name"],
             scheme_dict=dataset_dict["scheme"],
@@ -60,10 +61,11 @@ class Sample:
 
     """
 
-    def __init__(   # noqa: PLR0913, D417
+    def __init__(  # noqa: PLR0913, D417
         self,
         name: str,
         /,
+        tag: str = "",
         path: str | None = None,
         tree_name: str | None = None,
         scheme_dict: dict[str, str] | None = None,
@@ -86,23 +88,27 @@ class Sample:
             list_files = glob.glob(os.path.join(path, "*.root"))
 
             lazy_events = NanoEventsFactory.from_root(
-                [{file: tree_name} for file in list_files], schemaclass=NanoAODSchema, entry_stop=nevents, delayed=True
+                [{file: tree_name} for file in list_files], schemaclass=NanoAODSchema, delayed=True
             ).events()
 
-            self.events = ak.Array([{}] * dak.num(lazy_events, axis=0).compute())
+            if nevents is None:
+                nevents = dak.num(lazy_events, axis=0).compute()
+
+            self.events = ak.Array([{}] * nevents)
 
             if scheme_dict is None:
                 raise ValueError("No scheme provided. Please provide a scheme to rename the collections")
             for old_name, new_name in scheme_dict.items():
                 if old_name not in lazy_events.fields:
                     raise ValueError(f"Collection {old_name} does not exist.")
-                self.events[new_name] = ak.with_name(lazy_events[old_name].compute(), "Momentum4D")
+                self.events[new_name] = ak.with_name(lazy_events[old_name][:nevents].compute(), "Momentum4D")
                 self.events[new_name].layout.content.parameters["collection_name"] = new_name
 
         else:
             self.events = events
 
         self.sample_name = name
+        self.tag = tag
         self.hist_file = None
 
     @property
@@ -168,10 +174,10 @@ class Sample:
             )
 
         if ak_array is None:
-            self.events[collection_name] = ak.Array([{}] * self.n,with_name="Momentum4D")
+            self.events[collection_name] = ak.Array([{}] * self.n, with_name="Momentum4D")
         else:
-            self.events[collection_name] = ak.with_name(ak_array
-            ,"Momentum4D")
+            self.events[collection_name] = ak.with_name(ak_array, "Momentum4D")
+
     def get_vars(self, /, collection: str | None = None) -> list[str] | dict[str, list[str]]:
         """
         Returns the list of variables in the sample or in a specific collection
@@ -199,7 +205,7 @@ class Sample:
 
         """
         if self.hist_file is None:
-            self.hist_file = uproot.recreate(os.path.join(path, f"{self.sample_name}.root"))
+            self.hist_file = uproot.recreate(os.path.join(path, f"{self.sample_name}_{self.tag}.root"))
         else:
             print("Histogram already exists. Did nothing")
 
