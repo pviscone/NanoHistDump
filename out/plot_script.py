@@ -8,13 +8,13 @@ from hist import intervals
 
 hep.style.use("CMS")
 
-filename = "DoubleElectrons.root"
+filename = "DoubleElectrons_131Xv3.root"
 file = uproot.open(filename)
 
 objects = ["CryCluGenMatched",
            "TkGenMatched",
            "TkEleGenMatched",
-           #"TkCryCluGenMatch"
+           "TkCryCluGenMatch"
            ]
 
 
@@ -63,11 +63,11 @@ for var in ["pt", "eta"]:
         )
 # %%
 def plot_n(file):
-    objs = ["CryCluGenMatchedAll", "TkGenMatchedAll", "TkEleGenMatchedAll"]
+    objs = ["CryCluGenMatchedAll", "TkGenMatchedAll", "TkEleGenMatchedAll","TkCryCluGenMatchAll"]
     fig, ax = plt.subplots()
 
     for obj in objs:
-        hep.histplot(file[f"n/{obj}"],label=obj,ax=ax,linewidth=2)
+        hep.histplot(file[f"n/{obj}"],label=obj,ax=ax,linewidth=2,density=True)
 
 
     ax.grid()
@@ -79,7 +79,7 @@ def plot_n(file):
 
     for obj in objs:
         fig2, ax2 = plt.subplots()
-        hep.hist2dplot(file[f"n/{obj}Pt_vs_{obj}"], label=obj, ax=ax2, norm=colors.LogNorm(vmin=1, vmax=2000))
+        hep.hist2dplot(file[f"n/{obj}Pt_vs_{obj}"], label=obj, ax=ax2, norm=colors.LogNorm(vmin=1, vmax=700))
         ax2.set_xlabel("Gen pT")
         ax2.set_ylabel("Number of objects")
         ax2.set_title(obj)
