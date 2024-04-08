@@ -1,6 +1,6 @@
 import awkward as ak
 import numpy as np
-import gc
+
 from cfg.functions.matching import count_matched, match_to_gen, obj2obj_match, select_matched
 from cfg.functions.utils import add_collection
 from python.hist_struct import Hist
@@ -104,9 +104,7 @@ def define(events):
         events.TkEleGenMatchedAll, events.GenEle
     )
 
-
     #!-------------------Tk-CryClu-Gen Matching-------------------!#
-
 
     events["TkCryCluGenMatchAll"] = obj2obj_match(
         ["Tk", "CryCluGen"],
@@ -115,10 +113,11 @@ def define(events):
         var=[{"eta": "caloEta", "phi": "caloPhi"}, {"eta": "eta", "phi": "phi"}],
     )
 
-    events["TkCryCluGenMatch"] = select_matched(events.TkCryCluGenMatchAll, variables=("Tk_pt", "CryCluGen_pt"), strategy="min_dPt")
+    events["TkCryCluGenMatch"] = select_matched(
+        events.TkCryCluGenMatchAll, variables=("Tk_pt", "CryCluGen_pt"), strategy="min_dPt"
+    )
     events["n", "TkCryCluGenMatchAll"], events["n", "TkCryCluGenMatchAllPt"] = count_matched(
         events.TkCryCluGenMatchAll, events.GenEle
     )
-
 
     return events

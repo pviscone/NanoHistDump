@@ -30,7 +30,11 @@ class Hist:
 
     def __init__(
         self,
-        name,
+        collection_name,
+        /,
+        var_name=None,
+        collection_name2=None,
+        var_name2=None,
         hist_range=None,
         bins=None,
     ):
@@ -46,24 +50,22 @@ class Hist:
             bins (int | list[int,int], optional): Binning. Defaults to None (automatic binning).
 
         """
-        if name.count("/") > 1:
-            raise ValueError("Name should contain at most one '/'")
-        if name.count("_") > 2:
-            raise ValueError("Name should contain at most two '_' (2d hist)")
-
-        self.name = name
+        self.collection_name = collection_name
+        self.var_name = var_name
         self.hist_range = hist_range
         self.bins = bins
 
-        self.entire_sample = self.name == ""
-        self.entire_collection = self.name.count("/") == 0 and self.name != ""
-        self.single_var = self.name.count("/") == 1
-        self.dim = self.name.count("_vs_") + 1
+        self.entire_sample = self.collection_name == ""
+        self.collection_name2 = collection_name2
+        self.var_name2 = var_name2
+        if self.collection_name2 is not None:
+            self.dim = 2
+        else:
+            self.dim = 1
 
-        self.collection_name = None
-        self.var_name = None
-        if self.entire_collection:
-            self.collection_name = self.name.split("/")[0]
-        if self.single_var:
-            self.collection_name = self.name.split("/")[0]
-            self.var_name = self.name.split("/")[1]
+        if self.var_name is None:
+            self.entire_collection = True
+            self.single_var = False
+        else:
+            self.entire_collection = False
+            self.single_var = True

@@ -54,3 +54,5 @@ def NanoHistDump(
 
 if __name__ == "__main__":
     typer.run(NanoHistDump)
+    #NanoHistDump(config_file="cfg/new_example.py", dataset_file="datasets/131Xv3.yaml",samples="DoubleElectrons",nevents=1000,out_dir="prova")
+
