@@ -54,7 +54,7 @@ hists_n = [
     Hist("n/CryCluGenMatchedAllPt_vs_CryCluGenMatchedAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
     Hist("n/TkGenMatchedAllPt_vs_TkGenMatchedAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
     Hist("n/TkEleGenMatchedAllPt_vs_TkEleGenMatchedAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
-    #Hist("n/TkCryCluGenMatchAllPt_vs_TkCryCluGenMatchAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
+    Hist("n/TkCryCluGenMatchAllPt_vs_TkCryCluGenMatchAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
 ]
 
 hists_gen = [
@@ -72,11 +72,10 @@ hists = [
     *hists_TkGenMatched,
     *hists_TkEleGenMatched,
     *hists_CryCluGenMatched,
-    # *hists_TkCryCluGenMatched,
+    *hists_TkCryCluGenMatched,
 ]
 
 
-#!NON SALVARE LE COLLEZIONI ALL, torna solo n
 def define(events):
     add_collection(events, "n")
     #!-------------------GEN Selection-------------------!#
@@ -108,20 +107,18 @@ def define(events):
 
     #!-------------------Tk-CryClu-Gen Matching-------------------!#
 
-    if False:
-        events["TkCryCluMatch"] = obj2obj_match(
-            ["Tk", "CryClu"],
-            events.Tk,
-            events.CryClu,
-            var=[{"eta": "caloEta", "phi": "caloPhi"}, {"eta": "eta", "phi": "phi"}],
-        )
-        events["TkCryCluGenMatchAll"] = match_to_gen(
-            events.TkCryCluMatch, events.GenEle, calovar=True
-        )
-        events["TkCryCluGenMatch"] = select_matched(events.TkCryCluGenMatchAll)
-        events["n", "TkCryCluGenMatchAll"], events["n", "TkCryCluGenMatchAllPt"] = count_matched(
-            events.TkCryCluGenMatchAll, events.GenEle
-        )
+
+    events["TkCryCluGenMatchAll"] = obj2obj_match(
+        ["Tk", "CryCluGen"],
+        events.Tk,
+        events.CryCluGenMatchedAll,
+        var=[{"eta": "caloEta", "phi": "caloPhi"}, {"eta": "eta", "phi": "phi"}],
+    )
+
+    events["TkCryCluGenMatch"] = select_matched(events.TkCryCluGenMatchAll, variables=("Tk_pt", "CryCluGen_pt"), strategy="min_dPt")
+    events["n", "TkCryCluGenMatchAll"], events["n", "TkCryCluGenMatchAllPt"] = count_matched(
+        events.TkCryCluGenMatchAll, events.GenEle
+    )
 
 
     return events
