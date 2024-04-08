@@ -24,12 +24,18 @@ def match_to_gen(obj_to_match, gen_to_match, dr_cut=0.1, calovar=False):
     return matched_objs
 
 
-def select_matched(matched_objs):
+def select_matched(matched_objs,variables=("pt","genPt"),strategy="min_dPt"):
     n_matched = ak.num(matched_objs, axis=1)
     max_matched = ak.max(n_matched)
     for i in range(max_matched):
         match_to_gen_i = matched_objs[matched_objs.genIdx == i]
-        selected = match_to_gen_i[ak.argmin(np.abs(match_to_gen_i.genPt - match_to_gen_i.pt), axis=1, keepdims=True)]
+        if strategy == "min_dPt":
+            selected = match_to_gen_i[ak.argmin(np.abs(match_to_gen_i[variables[0]] - match_to_gen_i[variables[1]]), axis=1, keepdims=True)]
+        elif strategy == "min_dR":
+            selected = match_to_gen_i[ak.argmin(match_to_gen_i[variables[0]], axis=1, keepdims=True)]
+        elif strategy == "max_Pt":
+            selected = match_to_gen_i[ak.argmax(match_to_gen_i[variables[0]], axis=1, keepdims=True)]
+
         if i == 0:
             selecteds = selected
         else:
@@ -57,8 +63,10 @@ def count_matched(matched_objs, gen):
 
 
 
-def obj2obj_match(names,obj1_to_match, obj2_to_match, dr_cut=0.2, var=None):
-    name1,name2 = names
+def obj2obj_match(names, obj1_to_match, obj2_to_match, dr_cut=0.2, var=None):
+    name1, name2 = names
+    obj1_to_match = ak.with_name(obj1_to_match, "Momentum4D")
+    obj2_to_match = ak.with_name(obj2_to_match, "Momentum4D")
     if var is not None:
         obj1_to_match["eta"] = obj1_to_match[var[0]["eta"]]
         obj1_to_match["phi"] = obj1_to_match[var[0]["phi"]]
@@ -70,15 +78,16 @@ def obj2obj_match(names,obj1_to_match, obj2_to_match, dr_cut=0.2, var=None):
     for i in range(n):
         dr = obj2_to_match[:, i].deltaR(obj1_to_match)
         matched_obj = obj1_to_match[dr < dr_cut]
-        argmax = ak.argmax(matched_obj.pt, axis=1, keepdims=True)
-        matched_obj = matched_obj[argmax]
-
         for fields2 in obj2_to_match.fields:
-            matched_obj[f"{name2}_{fields2}"] = ak.singletons(obj2_to_match[:, i][fields2])
+            if "gen" in fields2:
+                matched_obj[f"{fields2}"] = obj2_to_match[:, i][fields2]
+            else:
+                matched_obj[f"{name2}_{fields2}"] = obj2_to_match[:, i][fields2]
+        matched_obj[f"{name2}Idx"] = i
         for fields1 in obj1_to_match.fields:
             idx = matched_obj.layout.content.fields.index(fields1)
             matched_obj.layout.content.fields[idx] = f"{name1}_{fields1}"
-        matched_obj[f"{name1}_{name2}_dR"] = dr[dr < dr_cut][argmax]
+        matched_obj[f"{name1}_{name2}_dR"] = dr[dr < dr_cut]
         matched_obj[f"{name1}_{name2}_dPt"] = matched_obj[f"{name1}_pt"] - obj2_to_match[:, i].pt
         matched_obj["pt"] = matched_obj[f"{name2}_pt"]
         matched_obj["eta"] = matched_obj[f"{name2}_eta"]
