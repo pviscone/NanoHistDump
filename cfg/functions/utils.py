@@ -1,20 +1,33 @@
 import awkward as ak
 
 
-def add_collection(events,name):
-    events[name] = ak.Array([{}]*len(events))
+def add_collection(events, name):
+    events[name] = ak.Array([{}] * len(events))
 
 
 def get_name(arr):
-    return arr.layout.__repr__().split("<parameter name='collection_name'>'")[1].split("'</parameter>")[0]
+    if "name" not in arr._layout.content.parameters:
+        return arr._layout.content.__repr__().split("<parameter name='collection_name'>'")[1].split("'</parameter>")[0]
+    else:
+        return arr._layout.content.parameters["name"]
+
+def set_name(arr, name):
+    arr._layout.content.parameters["name"] = name
 
 
-def builder(func):
-    def wrapper(*args, **kwargs):
-        builder = ak.ArrayBuilder()
-        return func(builder, *args, **kwargs).snapshot()
 
-    return wrapper
+
+def builders(n=1):
+    def decorator(function):
+        def wrapper(*args, **kwargs):
+            builders = [ak.ArrayBuilder() for _ in range(n)]
+            res_list = function(*builders, *args, **kwargs)
+            return [res.snapshot() for res in res_list]
+
+        return wrapper
+
+    return decorator
+
 
 def cartesian(obj1, obj2):
     name1 = get_name(obj1)
