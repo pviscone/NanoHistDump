@@ -7,7 +7,7 @@ import numpy as np
 
 sys.path.append("..")
 import python.sample
-from cfg.functions.utils import add_collection, builder, get_name
+from cfg.functions.utils import add_collection, builders, get_name
 
 importlib.reload(python.sample)
 Sample = python.sample.Sample
@@ -72,7 +72,7 @@ def select_matched(matched_objs, strategy="min_dPt"):
 import numba as nb
 
 
-@builder
+@builders
 @nb.njit
 def count_idx(builder, idx_arr):
     for subarr in idx_arr:
@@ -90,35 +90,24 @@ n = count_idx(a.GenEle.idx)
 b = select_matched(a)
 
 # %%
-import importlib
-import sys
 
-import awkward as ak
-import numpy as np
 
-sys.path.append("..")
-import python.sample
-from python.hist_struct import Hist
 
-h = Hist("")
-events["new"] = match_to_gen(events.CryClu, events.GenEle, calovar=True)
+def match_obj_to_couple(obj_to_match, couple, to_compare, dr_cut=0.1, calovar=False):
+    couple_to_match = couple
+    if calovar:
+        couple_to_match["eta"] = couple_to_match.caloeta
+        couple_to_match["phi"] = couple_to_match.calophi
 
-def doit(arr, h):
-    if h.collection_name != "":
-        names = h.collection_name.split("/")
-        arr = arr[*names]
-    def recursive(arr, h):
-        if len(arr.fields)>0:
-            fields=arr.fields
-            for field in fields:
-                if len(arr[field].fields)>0:
-                    new_h = Hist(h.collection_name+"/"+field)
-                else:
-                    new_h = Hist(h.collection_name,field)
-                recursive(arr[field], new_h)
-        else:
-            new_h = Hist(h.collection_name, h.var_name)
-            print(h.collection_name, h.var_name)
-    return recursive(arr, h)
+    cart, name1, name2 = cartesian(obj_to_match, couple_to_match)
 
-r = doit(events, h)
+    dr = cart[name1].deltaR(cart[name2][to_compare])
+    cart = cart[dr < dr_cut]
+    cart["dR"] = dr[dr < dr_cut]
+    cart["dPt"] = cart[name1].pt - cart[name2][to_compare].pt
+    return cart
+
+events["a"]=match_to_gen(events.CryClu, events.GenEle, calovar=True)
+set_name(events.a,"a")
+p=match_obj_to_couple(events.Tk, events.a, "CryClu")
+# %%
