@@ -53,13 +53,20 @@ def define(events):
         events.TkCryCluGenMatchAll.CryCluGenMatchedAll.GenEle.idx,
         events.TkCryCluGenMatchAll.CryCluGenMatchedAll.GenEle.pt,
     )
+    #!-------------------Tk-CryClu-Gen @ Vertex Matching-------------------!#
+    events["CryCluGenMatchedAllVertex"] = match_to_gen(events.CryClu, events.GenEle, calovar=True)
+    set_name(events.CryCluGenMatchedAllVertex, "CryCluGenMatchedAllVertex")
+    events["TkCryCluGenMatchAllVertex"] = match_obj_to_couple(
+    events.Tk, events.CryCluGenMatchedAllVertex, "CryClu", etaphi_vars=(("eta", "phi"), ("eta", "phi"))
+    )
+
+    events["TkCryCluGenMatchVertex"] = select_matched(events.TkCryCluGenMatchAllVertex, strategy="min_dPt")
+
 
     return events
 
 
 #!In order 2D, 1D, general (due to delete on add_hist)
-
-
 hists_CryCluGenMatched = [
     Hist("CryCluGenMatched/GenEle", "pt", hist_range=(0, 100), bins=50),
     Hist("CryCluGenMatched/GenEle", "eta", hist_range=(-2, 2), bins=50),
@@ -89,6 +96,14 @@ hists_TkCryCluGenMatched = [
 ]
 
 
+hists_TkCryCluGenMatchedVertex = [
+    Hist("TkCryCluGenMatchVertex/CryCluGenMatchedAllVertex/GenEle", "pt", hist_range=(0, 100), bins=50),
+    Hist("TkCryCluGenMatchVertex/CryCluGenMatchedAllVertex/GenEle", "eta", hist_range=(-2, 2), bins=50),
+    Hist("TkCryCluGenMatchVertex/CryCluGenMatchedAllVertex/GenEle", "phi", hist_range=(-3.14, 3.14), bins=50),
+    Hist("TkCryCluGenMatchVertex"),
+]
+
+
 hists_n = [
     Hist("n", "CryCluGenMatchedAllPt", "n", "CryCluGenMatchedAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
     Hist("n", "TkGenMatchedAllPt", "n", "TkGenMatchedAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
@@ -98,4 +113,11 @@ hists_n = [
 ]
 
 
-hists = [*hists_CryCluGenMatched, *hists_TkGenMatched, *hists_TkEleGenMatched, *hists_n, *hists_TkCryCluGenMatched]
+hists = [
+    *hists_CryCluGenMatched,
+    *hists_TkGenMatched,
+    *hists_TkEleGenMatched,
+    *hists_n,
+    *hists_TkCryCluGenMatched,
+    *hists_TkCryCluGenMatchedVertex,
+]
