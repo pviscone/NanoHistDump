@@ -71,6 +71,7 @@ class Sample:
         scheme_dict: dict[str, str] | None = None,
         nevents: int | None = None,
         events: NanoEventsFactory | None = None,
+        delete_on_add_hist: bool = True,
     ):
         """
         _summary_
@@ -110,6 +111,7 @@ class Sample:
         self.sample_name = name
         self.tag = tag
         self.hist_file = None
+        self.delete_on_add_hist = delete_on_add_hist
 
     @property
     def fields(self):
@@ -277,6 +279,10 @@ class Sample:
         hist_obj = hist.Hist(axis)
         hist_obj.fill(data)
         self.hist_file[f"{h.collection_name}/{h.var_name}"] = hist_obj
+
+        if self.delete_on_add_hist:
+            del self.events[*names][h.var_name]
+
 
     def _add_hists_2d(self, h: Hist) -> None:
         var1 = h.var_name
