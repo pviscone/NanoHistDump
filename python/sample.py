@@ -199,7 +199,7 @@ class Sample:
             return {field: self.events[field].fields for field in self.fields}
         return self.events[collection].fields
 
-    def create_outfile(self, path: str) -> None:
+    def create_outfile(self, cfg, path: str) -> None:
         """
         Create a root file to store the histograms
 
@@ -209,7 +209,7 @@ class Sample:
 
         """
         if self.hist_file is None:
-            self.hist_file = uproot.recreate(os.path.join(path, f"{self.sample_name}_{self.tag}.root"))
+            self.hist_file = uproot.recreate(os.path.join(path, f"{cfg}_{self.sample_name}_{self.tag}.root"))
         else:
             print("Histogram already exists. Did nothing")
 
