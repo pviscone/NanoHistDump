@@ -119,3 +119,4 @@ plots1/xemacs.csh
 .vscode/tasks.json
 metadata.json
 out/*.root
+.ignore
