@@ -87,7 +87,7 @@ def count_idx_dpt(builder_n, builder_dpt, couplegenidx, coupledpt, genpt):
         builder_dpt.begin_list()
         for idx in genidx_ev:
             builder_n.append(np.sum(couplegenidx_ev == idx))
-            if len(coupledpt_ev) == 0:
+            if np.sum(couplegenidx_ev == idx) == 0:
                 builder_dpt.append(-1)
             else:
                 builder_dpt.append(np.max(np.abs(coupledpt_ev)))

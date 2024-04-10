@@ -31,10 +31,7 @@ events = events[ak.num(events.GenEle) > 0]
 add_collection(events, "n")
 events["CryCluGenMatchAll"] = match_to_gen(events.CryClu, events.GenEle, calovar=True)
 set_name(events.CryCluGenMatchAll, "CryCluGenMatchAll")
-events["n", "CryCluGenMatchAll"], events["n", "CryCluGenMatchAllPt"] = count_idx_pt(
-        events.CryCluGenMatchAll.GenEle.idx,
-        events.CryCluGenMatchAll.GenEle.pt,
-    )
+
 #%%
 idx,pt=    events.CryCluGenMatchAll.GenEle.idx, events.CryCluGenMatchAll.GenEle.pt
 builder_idx = ak.ArrayBuilder()
