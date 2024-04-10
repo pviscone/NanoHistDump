@@ -2,7 +2,7 @@ import awkward as ak
 import numba as nb
 import numpy as np
 
-from cfg.functions.utils import builders, cartesian, get_name, set_name
+from cfg.functions.utils import builders, cartesian
 
 
 def match_to_gen(obj_to_match, gen, dr_cut=0.1, calovar=False):
@@ -28,15 +28,24 @@ def match_to_gen(obj_to_match, gen, dr_cut=0.1, calovar=False):
     return cart
 
 
-def select_matched(matched_objs, strategy="min_dPt"):
-    if strategy == "min_dPt":
-        return matched_objs[ak.argmin(matched_objs.dPt, axis=1, keepdims=True)]
-    if strategy == "min_dR":
-        return matched_objs[ak.argmin(matched_objs.dR, axis=1, keepdims=True)]
-    if "max_pt" in strategy:
-        name = strategy.split("_")[-1]
-        return matched_objs[ak.argmax(matched_objs[name].pt, axis=1, keepdims=True)]
-    return None
+def select_match(matched_objs, idxs, strategy="min_dPt"):
+    max_idx = ak.max(idxs)
+    selected_list = []
+    for i in range(max_idx + 1):
+        mask = idxs == i
+
+        if strategy == "min_dPt":
+            selected_mask = ak.argmin(matched_objs[mask].dPt, axis=1, keepdims=True)
+
+        if strategy == "min_dR":
+            selected_mask = ak.argmin(matched_objs[mask].dR, axis=1, keepdims=True)
+
+        if "max_pt" in strategy:
+            name = strategy.split("_")[-1]
+            selected_mask = ak.argmax(matched_objs[mask][name].pt, axis=1, keepdims=True)
+
+        selected_list.append(matched_objs[mask][selected_mask])
+    return ak.concatenate(selected_list, axis=1)
 
 
 @builders
