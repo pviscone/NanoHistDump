@@ -1,7 +1,7 @@
 import awkward as ak
 import numpy as np
 
-from cfg.functions.matching import count_idx_pt, match_obj_to_couple, match_to_gen, select_match
+from cfg.functions.matching import count_idx_pt, match_obj_to_couple, match_to_gen, select_match, count_idx_dpt
 from cfg.functions.utils import add_collection, set_name
 from python.hist_struct import Hist
 
@@ -23,33 +23,38 @@ def define(events):
 
     events["n", "CryCluGenMatchAll"], events["n", "CryCluGenMatchAllPt"] = count_idx_pt(
         events.CryCluGenMatchAll.GenEle.idx,
-        events.CryCluGenMatchAll.GenEle.pt,
+        events.GenEle.pt,
     )
 
-    _, events["n", "CryCluGenMatchAlldPt"] = count_idx_pt(
+    _, events["n", "CryCluGenMatchAllMaxAbsdPt"] = count_idx_dpt(
         events.CryCluGenMatchAll.GenEle.idx,
         events.CryCluGenMatchAll.dPt,
+        events.GenEle.pt
     )
 
     #!-------------------Tk-Gen Matching-------------------!#
     events["TkGenMatchAll"] = match_to_gen(events.Tk, events.GenEle)
     events["TkGenMatch"] = select_match(events.TkGenMatchAll, events.TkGenMatchAll.GenEle.idx)
     events["n", "TkGenMatchAll"], events["n", "TkGenMatchAllPt"] = count_idx_pt(
-        events.TkGenMatchAll.GenEle.idx, events.TkGenMatchAll.GenEle.pt
+        events.TkGenMatchAll.GenEle.idx, events.GenEle.pt
     )
 
-    _, events["n", "TkGenMatchAlldPt"] = count_idx_pt(
-        events.TkGenMatchAll.GenEle.idx, events.TkGenMatchAll.dPt
+    _, events["n", "TkGenMatchAllMaxAbsdPt"] = count_idx_dpt(
+        events.TkGenMatchAll.GenEle.idx,
+        events.TkGenMatchAll.dPt,
+        events.GenEle.pt,
     )
 
     #!-------------------TkEle-Gen Matching-------------------!#
     events["TkEleGenMatchAll"] = match_to_gen(events.TkEle, events.GenEle, calovar=True)
     events["TkEleGenMatch"] = select_match(events.TkEleGenMatchAll, events.TkEleGenMatchAll.GenEle.idx)
     events["n", "TkEleGenMatchAll"], events["n", "TkEleGenMatchAllPt"] = count_idx_pt(
-        events.TkEleGenMatchAll.GenEle.idx, events.TkEleGenMatchAll.GenEle.pt
+        events.TkEleGenMatchAll.GenEle.idx, events.GenEle.pt
     )
-    _, events["n", "TkEleGenMatchAlldPt"] = count_idx_pt(
-        events.TkEleGenMatchAll.GenEle.idx, events.TkEleGenMatchAll.dPt
+    _, events["n", "TkEleGenMatchAllMaxAbsdPt"] = count_idx_dpt(
+        events.TkEleGenMatchAll.GenEle.idx,
+        events.TkEleGenMatchAll.dPt,
+        events.GenEle.pt,
     )
 
     #!-------------------Tk-CryClu-Gen Matching-------------------!#
@@ -64,12 +69,13 @@ def define(events):
 
     events["n", "TkCryCluGenMatchAll"], events["n", "TkCryCluGenMatchAllPt"] = count_idx_pt(
         events.TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle.idx,
-        events.TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle.pt,
+        events.GenEle.pt,
     )
 
-    _, events["n", "TkCryCluGenMatchAlldPt"] = count_idx_pt(
+    _, events["n", "TkCryCluGenMatchAllMaxAbsdPt"] = count_idx_dpt(
         events.TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle.idx,
         events.TkCryCluGenMatchAll.dPt,
+        events.GenEle.pt,
     )
     #!-------------------Tk-CryClu-Gen @ Vertex Matching-------------------!#
     events["CryCluGenMatchAllVertex"] = match_to_gen(events.CryClu, events.GenEle, calovar=True)
@@ -86,12 +92,13 @@ def define(events):
 
     events["n", "TkCryCluGenMatchAllVertex"], events["n", "TkCryCluGenMatchAllVertexPt"] = count_idx_pt(
         events.TkCryCluGenMatchAllVertex.CryCluGenMatchAllVertex.GenEle.idx,
-        events.TkCryCluGenMatchAllVertex.CryCluGenMatchAllVertex.GenEle.pt,
+        events.GenEle.pt,
     )
 
-    _, events["n", "TkCryCluGenMatchAllVertexdPt"] = count_idx_pt(
+    _, events["n", "TkCryCluGenMatchAllVertexMaxAbsdPt"] = count_idx_dpt(
         events.TkCryCluGenMatchAllVertex.CryCluGenMatchAllVertex.GenEle.idx,
         events.TkCryCluGenMatchAllVertex.dPt,
+        events.GenEle.pt,
     )
 
     return events
@@ -148,16 +155,16 @@ hists_n = [
         hist_range=[(0, 100), (0, 10)],
         bins=[50, 10],
     ),
-    Hist("n", "CryCluGenMatchAlldPt", "n", "CryCluGenMatchAll", hist_range=[(-100, 100), (0, 10)], bins=[100, 10]),
-    Hist("n", "TkGenMatchAlldPt", "n", "TkGenMatchAll", hist_range=[(-100, 100), (0, 10)], bins=[100, 10]),
-    Hist("n", "TkEleGenMatchAlldPt", "n", "TkEleGenMatchAll", hist_range=[(-100, 100), (0, 10)], bins=[100, 10]),
-    Hist("n", "TkCryCluGenMatchAlldPt", "n", "TkCryCluGenMatchAll", hist_range=[(-100, 100), (0, 10)], bins=[100, 10]),
+    Hist("n", "CryCluGenMatchAllMaxAbsdPt", "n", "CryCluGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[100, 10]),
+    Hist("n", "TkGenMatchAllMaxAbsdPt", "n", "TkGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[100, 10]),
+    Hist("n", "TkEleGenMatchAllMaxAbsdPt", "n", "TkEleGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[100, 10]),
+    Hist("n", "TkCryCluGenMatchAllMaxAbsdPt", "n", "TkCryCluGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[100, 10]),
     Hist(
         "n",
-        "TkCryCluGenMatchAllVertexdPt",
+        "TkCryCluGenMatchAllVertexMaxAbsdPt",
         "n",
         "TkCryCluGenMatchAllVertex",
-        hist_range=[(-100, 100), (0, 10)],
+        hist_range=[(-1, 100), (0, 10)],
         bins=[100, 10],
     ),
     Hist("n", hist_range=(0, 15), bins=15),

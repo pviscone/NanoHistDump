@@ -63,27 +63,37 @@ def count_idx(builder, idx_arr):
 
 @builders(2)
 @nb.jit
-def count_idx_pt(builder_idx, builder_pt, idx, pt):
-    for event_idx, idx_ev in enumerate(idx):
-        builder_idx.begin_list()
+def count_idx_pt(builder_n, builder_pt, couplegenidx, genpt):
+    for event_idx, genpt_ev in enumerate(genpt):
+        genidx_ev = np.arange(len(genpt_ev))
+        couplegenidx_ev = np.array(couplegenidx[event_idx])
+        builder_n.begin_list()
         builder_pt.begin_list()
-        idx_argsort = np.argsort(np.array(idx_ev))
-        idx_ev = np.array(idx_ev)[idx_argsort]
-        pt_ev = pt[event_idx]
-        pt_ev = np.array(pt_ev)[idx_argsort]
-
-        unique_dict = {}
-        for i, val in np.ndenumerate(idx_ev):
-            if val not in unique_dict:
-                unique_dict[val] = i[0]
-        unique_values = np.array(list(unique_dict.keys()))
-        unique_indices = np.array(list(unique_dict.values()))
-        for u_idx, u_values in zip(unique_indices, unique_values):
-            builder_idx.append(np.sum(idx_ev == u_values))
-            builder_pt.append(pt_ev[u_idx])
-        builder_idx.end_list()
+        for idx in genidx_ev:
+            builder_n.append(np.sum(couplegenidx_ev == idx))
+            builder_pt.append(genpt_ev[idx])
+        builder_n.end_list()
         builder_pt.end_list()
-    return builder_idx, builder_pt
+    return builder_n, builder_pt
+
+@builders(2)
+@nb.jit
+def count_idx_dpt(builder_n, builder_dpt, couplegenidx, coupledpt, genpt):
+    for event_idx, genpt_ev in enumerate(genpt):
+        genidx_ev = np.arange(len(genpt_ev))
+        coupledpt_ev = np.array(coupledpt[event_idx])
+        couplegenidx_ev = np.array(couplegenidx[event_idx])
+        builder_n.begin_list()
+        builder_dpt.begin_list()
+        for idx in genidx_ev:
+            builder_n.append(np.sum(couplegenidx_ev == idx))
+            if len(coupledpt_ev) == 0:
+                builder_dpt.append(-1)
+            else:
+                builder_dpt.append(np.max(np.abs(coupledpt_ev)))
+        builder_n.end_list()
+        builder_dpt.end_list()
+    return builder_n, builder_dpt
 
 
 def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta", "phi"), ("eta", "phi"))):
@@ -116,3 +126,4 @@ def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta"
     del cart[name2, to_compare, "old_eta"]
     del cart[name2, to_compare, "old_phi"]
     return cart
+
