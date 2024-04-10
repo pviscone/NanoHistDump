@@ -19,7 +19,7 @@ TH2 = python.plotters.TH2
 
 hep.style.use("CMS")
 
-filename = "DoubleElectrons_131Xv3.root"
+filename = "../out/BarrelMatchStudies_DoubleElectrons_131Xv3.root"
 file = uproot.open(filename)
 
 
