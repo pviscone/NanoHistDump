@@ -269,9 +269,12 @@ class Sample:
 
         if h.bins is None and h.hist_range is None:
             bin_edges = np.histogram_bin_edges(data, bins="auto")
+            nbin=len(bin_edges)-1
+            length=bin_edges[-1]-bin_edges[0]
+            bin_edges=np.linspace(bin_edges[0]-1,bin_edges[-1]+1,int((length+2)*nbin/length))
             axis = hist.axis.Variable(bin_edges, name=h.var_name)
         elif h.hist_range is None and h.bins is not None:
-            min_range, max_range = ak.min(data), ak.max(data)
+            min_range, max_range = ak.min(data)-1, ak.max(data)+1
             axis = hist.axis.Regular(h.bins, min_range, max_range, name=h.var_name)
         elif h.hist_range is not None and h.bins is None:
             axis = hist.axis.Regular(50, *h.hist_range, name=h.var_name)
