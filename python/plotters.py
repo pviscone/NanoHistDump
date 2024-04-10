@@ -1,25 +1,31 @@
-from dataclasses import dataclass
+import glob
+import os
 
 import matplotlib.pyplot as plt
 import mplhep as hep
 import numpy as np
 from hist import intervals
 from matplotlib import colors
+from rich import print as pprint
 
-hep.styles.cms.CMS["patch.linewidth"]=2
-#palette list
+hep.styles.cms.CMS["patch.linewidth"] = 2
+# palette list
 # hep.styles.cms.cmap_petroff
 hep.style.use("CMS")
-#plt.rcParams["axes.axisbelow"] = True
+
+import sys
+
+# plt.rcParams["axes.axisbelow"] = True
 
 
-@dataclass
-class Text:
-    text: str
-    x: float
-    y: float
-    size: int = 12
-    color: str = "black"
+def filepath_loader(path_list):
+    files_list = []
+    for path in path_list:
+        if ".root" in path:
+            files_list.append(path)
+        else:
+            files_list.extend(glob.glob(os.path.join(path, "*.root")))
+    yield from files_list
 
 
 class BasePlotter:
@@ -37,7 +43,7 @@ class BasePlotter:
         ylabel="",
         lumitext="PU 200",
         cmstext="Phase-2 Simulation",
-        cmsloc=0
+        cmsloc=0,
     ):
         if (fig is None and ax is not None) or (fig is not None and ax is None):
             raise ValueError("If fig is provided, ax must be provided as well, and vice versa.")
@@ -64,7 +70,6 @@ class BasePlotter:
             self.ax.set_ylim(ylim)
             self.ax.autoscale_view(scalex=True, scaley=True)
 
-
         if "y" in log.lower():
             self.ax.set_yscale("log")
         if "x" in log.lower():
@@ -73,25 +78,29 @@ class BasePlotter:
             self.zlog = True
         else:
             self.zlog = False
-        self.zlim = zlim
+        if zlim is None:
+            self.zlim = (None, None)
 
-
-    def add_text(self,text: Text):
-        self.ax.text(text.x, text.y, text.text, size=text.size, color=text.color)
+    def add_text(self, *args, **kwargs):
+        self.ax.text(*args, **kwargs)
 
     def save(self, filename, *args, **kwargs):
+        pprint(f"Saving {filename}")
         if ".pdf" not in filename:
             raise ValueError("For god's sake, save it as a pdf file!")
         self.fig.savefig(filename, *args, **kwargs)
+        plt.close(self.fig)
 
 
 class TH1(BasePlotter):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args,** kwargs)
+        super().__init__(*args, **kwargs)
 
     def add(self, hist, **kwargs):
-        hep.histplot(hist, ax=self.ax, clip_on=True,**kwargs)
+        hep.histplot(hist, ax=self.ax, clip_on=True, **kwargs)
+        sys.stderr = open(os.devnull, "w")
         self.ax.legend()
+        sys.stderr = sys.__stderr__
 
         if kwargs.get("histtype") == "fill":
             self.ax.set_axisbelow(True)
@@ -103,26 +112,27 @@ class TH2(BasePlotter):
 
     def add(self, hist, **kwargs):
         if self.zlog:
-            if self.zlim is None:
-                self.zlim = (None, None)
-            kwargs["norm"]=colors.LogNorm(vmin=self.zlim[0], vmax=self.zlim[1])
+            kwargs["norm"] = colors.LogNorm(vmin=self.zlim[0], vmax=self.zlim[1])
         hep.hist2dplot(hist, ax=self.ax, **kwargs)
+        sys.stderr = open(os.devnull, "w")
         self.ax.legend()
+        sys.stderr = sys.__stderr__
+
 
 class TEfficiency(BasePlotter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, ylabel="Efficiency", **kwargs)
 
     def add(self, num, den, **kwargs):
-        num=num.to_numpy()
-        edges=num[1]
-        num=num[0]
-        den=den.to_numpy()[0]
+        num = num.to_numpy()
+        edges = num[1]
+        num = num[0]
+        den = den.to_numpy()[0]
         centers = (edges[:-1] + edges[1:]) / 2
         err = np.nan_to_num(intervals.ratio_uncertainty(num, den, "efficiency"), 0)
         eff = np.nan_to_num(num / den, 0)
         self.ax.step(centers, eff, where="mid", **kwargs)
         self.ax.errorbar(centers, eff, yerr=err, fmt="none", color=self.ax.lines[-1].get_color())
+        sys.stderr = open(os.devnull, "w")
         self.ax.legend()
-
-
+        sys.stderr = sys.__stderr__
