@@ -107,7 +107,9 @@ class Sample:
 
         else:
             self.events = events
+            nevents = len(events)
 
+        self.nevents = nevents
         self.sample_name = name
         self.tag = tag
         self.hist_file = None
@@ -281,7 +283,8 @@ class Sample:
         self.hist_file[f"{h.collection_name}/{h.var_name}"] = hist_obj
 
         if self.delete_on_add_hist:
-            del self.events[*names][h.var_name]
+            del self.events[*names,h.var_name]
+
 
 
     def _add_hists_2d(self, h: Hist) -> None:
@@ -317,4 +320,7 @@ class Sample:
 
         hist_obj = hist.Hist(axis1, axis2)
         hist_obj.fill(data1, data2)
-        self.hist_file[f"{h.collection_name}-{h.collection_name2.split('/')[-1]}/{h.var_name}_vs_{h.var_name2}"] = hist_obj
+        if h.collection_name2 != h.collection_name:
+            self.hist_file[f"{h.collection_name}-{h.collection_name2.split('/')[-1]}/{h.var_name}_vs_{h.var_name2}"] = hist_obj
+        else:
+            self.hist_file[f"{h.collection_name}/{h.var_name}_vs_{h.var_name2}"] = hist_obj
