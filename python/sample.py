@@ -61,7 +61,7 @@ class Sample:
 
     """
 
-    def __init__(  # noqa: PLR0913, D417
+    def __init__(  # noqa: D417
         self,
         name: str,
         /,
@@ -269,12 +269,16 @@ class Sample:
 
         if h.bins is None and h.hist_range is None:
             bin_edges = np.histogram_bin_edges(data, bins="auto")
-            nbin=len(bin_edges)-1
-            length=bin_edges[-1]-bin_edges[0]
-            bin_edges=np.linspace(bin_edges[0]-1,bin_edges[-1]+1,int((length+2)*nbin/length))
+            if "int32" in data.typestr:
+                nbin=len(bin_edges)-1
+                length=bin_edges[-1]-bin_edges[0]
+                bin_edges=np.linspace(bin_edges[0]-1,bin_edges[-1]+1,int((length+2)*nbin/length))
             axis = hist.axis.Variable(bin_edges, name=h.var_name)
         elif h.hist_range is None and h.bins is not None:
-            min_range, max_range = ak.min(data)-1, ak.max(data)+1
+            min_range, max_range = ak.min(data), ak.max(data)
+            if "int32" in data.typestr:
+                min_range=min_range-1
+                max_range=max_range+1
             axis = hist.axis.Regular(h.bins, min_range, max_range, name=h.var_name)
         elif h.hist_range is not None and h.bins is None:
             axis = hist.axis.Regular(50, *h.hist_range, name=h.var_name)
@@ -306,13 +310,29 @@ class Sample:
 
         if h.bins is None and h.hist_range is None:
             bin_edges1 = np.histogram_bin_edges(data1, bins="auto")
+            if "int32" in data1.typestr:
+                nbin=len(bin_edges1)-1
+                length=bin_edges1[-1]-bin_edges1[0]
+                bin_edges1=np.linspace(bin_edges1[0]-1,bin_edges1[-1]+1,int((length+2)*nbin/length))
             axis1 = hist.axis.Variable(bin_edges1, name=h.collection_name +"/"+ var1)
             bin_edges2 = np.histogram_bin_edges(data2, bins="auto")
+            if "int32" in data2.typestr:
+                nbin=len(bin_edges2)-1
+                length=bin_edges2[-1]-bin_edges2[0]
+                bin_edges2=np.linspace(bin_edges2[0]-1,bin_edges2[-1]+1,int((length+2)*nbin/length))
             axis2 = hist.axis.Variable(bin_edges2, name=h.collection_name2 +"/"+ var2)
         elif h.hist_range is None and h.bins is not None:
             min_range1, max_range1 = ak.min(data1), ak.max(data1)
+            if "int32" in data1.typestr:
+                min_range1=min_range1-1
+                max_range1=max_range1+1
             axis1 = hist.axis.Regular(h.bins[0], min_range1, max_range1, name=h.collection_name +"/"+ var1)
+
             min_range2, max_range2 = ak.min(data2), ak.max(data2)
+            if "int32" in data2.typestr:
+                min_range2=min_range2-1
+                max_range2=max_range2+1
+
             axis2 = hist.axis.Regular(h.bins[1], min_range2, max_range2, name=h.collection_name2 +"/"+ var2)
         elif h.hist_range is not None and h.bins is None:
             axis1 = hist.axis.Regular(50, *h.hist_range[0], name=h.collection_name +"/"+ var1)
