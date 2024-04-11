@@ -1,7 +1,7 @@
 import awkward as ak
 import numpy as np
 
-from cfg.functions.matching import count_idx_pt, match_obj_to_couple, match_to_gen, select_match, count_idx_dpt
+from cfg.functions.matching import count_idx_dpt, count_idx_pt, match_obj_to_couple, match_to_gen, select_match
 from cfg.functions.utils import add_collection, set_name
 from python.hist_struct import Hist
 

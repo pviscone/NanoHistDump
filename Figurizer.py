@@ -34,7 +34,7 @@ def Figurizer(
 
             elif "TH2" in str(type(file[key])):
                 h = TH2(xlabel=key.rsplit("/")[-1].split("_vs_")[0],
-                        ylabel=key.rsplit("/")[-1].split("_vs_")[1])
+                        ylabel=key.rsplit("/")[-1].split("_vs_")[1],log="z")
 
             h.add(file[key])
             h.save(os.path.join(out_dir, filename, key + ".pdf"))
