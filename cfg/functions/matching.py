@@ -5,13 +5,19 @@ import numpy as np
 from cfg.functions.utils import builders, cartesian
 
 
-def match_to_gen(obj_to_match, gen, dr_cut=0.1, calovar=False):
+def match_to_gen(obj, gen, dr_cut=0.1, etaphi_vars=(("eta", "phi"), ("eta", "phi"))):
     gen_to_match = gen
-    if calovar:
-        gen_to_match["old_eta"] = gen_to_match.eta
-        gen_to_match["old_phi"] = gen_to_match.phi
-        gen_to_match["eta"] = gen_to_match.caloeta
-        gen_to_match["phi"] = gen_to_match.calophi
+    obj_to_match = obj
+    if etaphi_vars[1] != ("eta", "phi"):
+        gen_to_match["old_eta"] = gen_to_match["eta"]
+        gen_to_match["old_phi"] = gen_to_match["phi"]
+        gen_to_match["eta"] = gen_to_match[etaphi_vars[1][0]]
+        gen_to_match["phi"] = gen_to_match[etaphi_vars[1][1]]
+    if etaphi_vars[0] != ("eta", "phi"):
+        obj_to_match["old_eta"] = obj_to_match["eta"]
+        obj_to_match["old_phi"] = obj_to_match["phi"]
+        obj_to_match["eta"] = obj_to_match[etaphi_vars[0][0]]
+        obj_to_match["phi"] = obj_to_match[etaphi_vars[0][1]]
 
     cart, name1, name2 = cartesian(obj_to_match, gen_to_match)
 
@@ -19,7 +25,14 @@ def match_to_gen(obj_to_match, gen, dr_cut=0.1, calovar=False):
     cart = cart[dr < dr_cut]
     cart["dR"] = dr[dr < dr_cut]
     cart["dPt"] = cart[name1].pt - cart[name2].pt
-    if calovar:
+
+    if etaphi_vars[0] != ("eta", "phi"):
+        cart[name1, "eta"] = cart[name1, "old_eta"]
+        cart[name1, "phi"] = cart[name1, "old_phi"]
+        del cart[name1, "old_eta"]
+        del cart[name1, "old_phi"]
+
+    if etaphi_vars[1] != ("eta", "phi"):
         cart[name2, "eta"] = cart[name2, "old_eta"]
         cart[name2, "phi"] = cart[name2, "old_phi"]
         del cart[name2, "old_eta"]
@@ -76,6 +89,7 @@ def count_idx_pt(builder_n, builder_pt, couplegenidx, genpt):
         builder_pt.end_list()
     return builder_n, builder_pt
 
+
 @builders(2)
 @nb.jit
 def count_idx_dpt(builder_n, builder_dpt, couplegenidx, coupledpt, genpt):
@@ -100,14 +114,17 @@ def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta"
     couple_to_match = couple
     obj_to_match = obj
 
-    couple_to_match[to_compare, "old_eta"] = couple_to_match[to_compare, "eta"]
-    couple_to_match[to_compare, "old_phi"] = couple_to_match[to_compare, "phi"]
-    couple_to_match[to_compare, "eta"] = couple_to_match[to_compare, etaphi_vars[1][0]]
-    couple_to_match[to_compare, "phi"] = couple_to_match[to_compare, etaphi_vars[1][1]]
-    obj_to_match["old_eta"] = obj_to_match["eta"]
-    obj_to_match["old_phi"] = obj_to_match["phi"]
-    obj_to_match["eta"] = obj_to_match[etaphi_vars[0][0]]
-    obj_to_match["phi"] = obj_to_match[etaphi_vars[0][1]]
+    if etaphi_vars[0] != ("eta", "phi"):
+        obj_to_match["old_eta"] = obj_to_match["eta"]
+        obj_to_match["old_phi"] = obj_to_match["phi"]
+        obj_to_match["eta"] = obj_to_match[etaphi_vars[0][0]]
+        obj_to_match["phi"] = obj_to_match[etaphi_vars[0][1]]
+
+    if etaphi_vars[1] != ("eta", "phi"):
+        couple_to_match[to_compare, "old_eta"] = couple_to_match[to_compare, "eta"]
+        couple_to_match[to_compare, "old_phi"] = couple_to_match[to_compare, "phi"]
+        couple_to_match[to_compare, "eta"] = couple_to_match[to_compare, etaphi_vars[1][0]]
+        couple_to_match[to_compare, "phi"] = couple_to_match[to_compare, etaphi_vars[1][1]]
 
     cart, name1, name2 = cartesian(obj_to_match, couple_to_match)
 
@@ -116,14 +133,15 @@ def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta"
     cart["dR"] = dr[dr < dr_cut]
     cart["dPt"] = cart[name1].pt - cart[name2, to_compare].pt
 
-    cart[name1, "eta"] = cart[name1, "old_eta"]
-    cart[name1, "phi"] = cart[name1, "old_phi"]
+    if etaphi_vars[0] != ("eta", "phi"):
+        cart[name1, "eta"] = cart[name1, "old_eta"]
+        cart[name1, "phi"] = cart[name1, "old_phi"]
+        del cart[name1, "old_eta"]
+        del cart[name1, "old_phi"]
 
-    cart[name2, to_compare, "eta"] = cart[name2, to_compare, "old_eta"]
-    cart[name2, to_compare, "phi"] = cart[name2, to_compare, "old_phi"]
-    del cart[name1, "old_eta"]
-    del cart[name1, "old_phi"]
-    del cart[name2, to_compare, "old_eta"]
-    del cart[name2, to_compare, "old_phi"]
+    if etaphi_vars[1] != ("eta", "phi"):
+        cart[name2, to_compare, "eta"] = cart[name2, to_compare, "old_eta"]
+        cart[name2, to_compare, "phi"] = cart[name2, to_compare, "old_phi"]
+        del cart[name2, to_compare, "old_eta"]
+        del cart[name2, to_compare, "old_phi"]
     return cart
-
