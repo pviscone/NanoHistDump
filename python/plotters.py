@@ -9,6 +9,7 @@ from matplotlib import colors
 from rich import print as pprint
 
 hep.styles.cms.CMS["patch.linewidth"] = 2
+hep.styles.cms.CMS["lines.linewidth"] = 2
 # palette list
 # hep.styles.cms.cmap_petroff
 hep.style.use("CMS")
