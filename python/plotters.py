@@ -10,13 +10,22 @@ from rich import print as pprint
 
 hep.styles.cms.CMS["patch.linewidth"] = 2
 hep.styles.cms.CMS["lines.linewidth"] = 2
-# palette list
-# hep.styles.cms.cmap_petroff
+# palette list (10 colors version)
+hep.styles.cms.cmap_petroff = [
+    "#3f90da",
+    "#ffa90e",
+    "#bd1f01",
+    "#94a4a2",
+    "#832db6",
+    "#a96b59",
+    "#e76300",
+    "#b9ac70",
+    "#92dadd",
+    "#717581",
+]
 hep.style.use("CMS")
 
 import sys
-
-# plt.rcParams["axes.axisbelow"] = True
 
 
 def filepath_loader(path_list):
