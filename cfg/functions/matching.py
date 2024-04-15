@@ -90,24 +90,28 @@ def count_idx_pt(builder_n, builder_pt, couplegenidx, genpt):
     return builder_n, builder_pt
 
 
-@builders(2)
+@builders(3)
 @nb.jit
-def count_idx_dpt(builder_n, builder_dpt, couplegenidx, coupledpt, genpt):
+def count_idx_dpt(builder_n,builder_mindpt, builder_maxdpt, couplegenidx, coupledpt, genpt):
     for event_idx, genpt_ev in enumerate(genpt):
         genidx_ev = np.arange(len(genpt_ev))
         coupledpt_ev = np.array(coupledpt[event_idx])
         couplegenidx_ev = np.array(couplegenidx[event_idx])
         builder_n.begin_list()
-        builder_dpt.begin_list()
+        builder_maxdpt.begin_list()
+        builder_mindpt.begin_list()
         for idx in genidx_ev:
             builder_n.append(np.sum(couplegenidx_ev == idx))
             if np.sum(couplegenidx_ev == idx) == 0:
-                builder_dpt.append(-1)
+                builder_maxdpt.append(-1)
+                builder_mindpt.append(-1)
             else:
-                builder_dpt.append(np.max(np.abs(coupledpt_ev)))
+                builder_maxdpt.append(np.max(np.abs(coupledpt_ev)))
+                builder_mindpt.append(np.min(np.abs(coupledpt_ev)))
         builder_n.end_list()
-        builder_dpt.end_list()
-    return builder_n, builder_dpt
+        builder_mindpt.end_list()
+        builder_maxdpt.end_list()
+    return builder_n, builder_mindpt, builder_maxdpt
 
 
 def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta", "phi"), ("eta", "phi"))):
