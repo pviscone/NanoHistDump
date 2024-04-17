@@ -68,6 +68,7 @@ class BasePlotter:
 
         hep.cms.text(self.cmstext, ax=self.ax, loc=cmsloc)
         hep.cms.lumitext(self.lumitext, ax=self.ax)
+        self.lazy_args = []
 
         self.ax.set_xlabel(xlabel)
         self.ax.set_ylabel(ylabel)
@@ -100,6 +101,15 @@ class BasePlotter:
             raise ValueError("For god's sake, save it as a pdf file!")
         self.fig.savefig(filename, *args, **kwargs)
         plt.close(self.fig)
+
+    def lazy_add(self, to_file, *args,**kwargs):
+        self.lazy_args.append((to_file, args, kwargs))
+
+    def lazy_execute(self,file):
+        for to_file, args, kwargs in self.lazy_args:
+            data=[file[var] for var in to_file]
+            self.add(*data, *args, **kwargs)
+
 
 
 class TH1(BasePlotter):
