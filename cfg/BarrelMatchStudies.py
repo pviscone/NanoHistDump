@@ -14,6 +14,8 @@ def define(events):
     events["GenEle"] = events.GenEle[np.abs(events.GenEle.eta) < BarrelEta]
     # events["GenEle"] = events.GenEle[events.GenEle.pt > 5]
     events = events[ak.num(events.GenEle) > 0]
+    print(f"Number of events after selection: {len(events)}")
+    print(f"Number of GenEle {ak.sum(ak.num(events.GenEle,axis=1))}")
 
     #!-------------------CryClu-Gen Matching-------------------!#
     events["CryCluGenMatchAll"] = match_to_gen(events.CryClu, events.GenEle, etaphi_vars=(("eta", "phi"), ("caloeta", "calophi")))
