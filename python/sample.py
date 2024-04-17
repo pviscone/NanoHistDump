@@ -248,11 +248,15 @@ class Sample:
                             else:
                                 new_h = Hist(h.collection_name, field, hist_range=h.hist_range, bins=h.bins)
                             recursive(arr[field], new_h)
+                    #when all the collection is consumed and each variable is deleted, the recursive function will see the empty collection as a variable. Delete it
+                    elif h.collection_name=="":
+                            del self.events[*h.var_name.split("/")]
                     else:
                         new_h = Hist(h.collection_name, h.var_name, hist_range=h.hist_range, bins=h.bins)
                         self._add_hists(new_h)
 
                 recursive(arr, h)
+
 
     def _add_hists(self, h: Hist) -> None:
         if h.dim == 1:

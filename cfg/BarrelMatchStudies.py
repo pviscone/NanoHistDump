@@ -115,8 +115,6 @@ hists_CryCluGenMatch = [
     Hist("n", "CryCluGenMatchAllPt", "n", "CryCluGenMatchAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
     Hist("n", "CryCluGenMatchAllMaxAbsdPt", "n", "CryCluGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]),
     Hist("n", "CryCluGenMatchAllMinAbsdPt", "n", "CryCluGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]),
-    Hist("CryCluGenMatch"),
-    Hist("CryCluGenMatchAll"),
 ]
 
 hists_TkGenMatch = [
@@ -126,8 +124,6 @@ hists_TkGenMatch = [
     Hist("n", "TkGenMatchAllPt", "n", "TkGenMatchAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
     Hist("n", "TkGenMatchAllMaxAbsdPt", "n", "TkGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]),
     Hist("n", "TkGenMatchAllMinAbsdPt", "n", "TkGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]),
-    Hist("TkGenMatch"),
-    Hist("TkGenMatchAll"),
 ]
 
 hists_TkEleGenMatch = [
@@ -137,8 +133,6 @@ hists_TkEleGenMatch = [
     Hist("n", "TkEleGenMatchAllPt", "n", "TkEleGenMatchAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
     Hist("n", "TkEleGenMatchAllMaxAbsdPt", "n", "TkEleGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]),
     Hist("n", "TkEleGenMatchAllMinAbsdPt", "n", "TkEleGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]),
-    Hist("TkEleGenMatch"),
-    Hist("TkEleGenMatchAll"),
 ]
 
 hists_TkCryCluGenMatch = [
@@ -152,8 +146,6 @@ hists_TkCryCluGenMatch = [
     Hist(
         "n", "TkCryCluGenMatchAllMinAbsdPt", "n", "TkCryCluGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]
     ),
-    Hist("TkCryCluGenMatch"),
-    Hist("TkCryCluGenMatchAll"),
 ]
 
 hists_TkGenCryCluGenMatch = [
@@ -167,8 +159,6 @@ hists_TkGenCryCluGenMatch = [
     Hist(
         "n", "TkGenCryCluGenMatchAllMinAbsdPt", "n", "TkGenCryCluGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]
     ),
-    Hist("TkGenCryCluGenMatch"),
-    Hist("TkGenCryCluGenMatchAll"),
 ]
 
 
@@ -181,8 +171,9 @@ hists_genele = [
     Hist("GenEle", "pt", hist_range=(0, 100), bins=50),
     Hist("GenEle", "eta", hist_range=(-2, 2), bins=50),
     Hist("GenEle", "phi", hist_range=(-3.14, 3.14), bins=50),
-    Hist("GenEle"),
 ]
+
+hists_all = [Hist("")]
 
 hists = [
 
@@ -193,4 +184,5 @@ hists = [
     *hists_TkGenCryCluGenMatch,
     *hists_genele,
     *hists_n,
+    *hists_all
 ]
