@@ -134,8 +134,8 @@ def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta"
 
     dr = cart[name1].deltaR(cart[name2, to_compare])
     cart = cart[dr < dr_cut]
-    cart["dR"] = dr[dr < dr_cut]
-    cart["dPt"] = cart[name1].pt - cart[name2, to_compare].pt
+    cart[f"dR{to_compare}"] = dr[dr < dr_cut]
+    cart[f"dPt{to_compare}"] = cart[name1].pt - cart[name2, to_compare].pt
 
     if etaphi_vars[0] != ("eta", "phi"):
         cart[name1, "eta"] = cart[name1, "old_eta"]
