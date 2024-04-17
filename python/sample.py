@@ -1,6 +1,7 @@
 # %%
 import glob
 import os
+import re
 import warnings
 
 import awkward as ak
@@ -270,16 +271,23 @@ class Sample:
 
         if h.bins is None and h.hist_range is None:
             bin_edges = np.histogram_bin_edges(data, bins="auto")
-            if "int32" in data.typestr:
-                nbin=len(bin_edges)-1
-                length=bin_edges[-1]-bin_edges[0]
-                bin_edges=np.linspace(bin_edges[0]-1,bin_edges[-1]+1,int((length+2)*nbin/length))
+
+            # re madness to do camelcase splitting
+            if ("int32" in data.typestr) or (
+                re.sub("([A-Z][a-z]+)", r" \1", re.sub("([A-Z]+)", r" \1", h.var_name)).split()[0] == "is"
+            ):
+                nbin = len(bin_edges) - 1
+                length = bin_edges[-1] - bin_edges[0]
+                bin_edges = np.linspace(bin_edges[0] - 1, bin_edges[-1] + 1, int((length + 2) * nbin / length))
             axis = hist.axis.Variable(bin_edges, name=h.var_name)
         elif h.hist_range is None and h.bins is not None:
             min_range, max_range = ak.min(data), ak.max(data)
-            if "int32" in data.typestr:
-                min_range=min_range-1
-                max_range=max_range+1
+            # re madness to do camelcase splitting
+            if ("int32" in data.typestr) or (
+                re.sub("([A-Z][a-z]+)", r" \1", re.sub("([A-Z]+)", r" \1", h.var_name)).split()[0] == "is"
+            ):
+                min_range = min_range - 1
+                max_range = max_range + 1
             axis = hist.axis.Regular(h.bins, min_range, max_range, name=h.var_name)
         elif h.hist_range is not None and h.bins is None:
             axis = hist.axis.Regular(50, *h.hist_range, name=h.var_name)
@@ -291,9 +299,7 @@ class Sample:
         self.hist_file[f"{h.collection_name}/{h.var_name}"] = hist_obj
 
         if self.delete_on_add_hist:
-            del self.events[*names,h.var_name]
-
-
+            del self.events[*names, h.var_name]
 
     def _add_hists_2d(self, h: Hist) -> None:
         var1 = h.var_name
@@ -311,40 +317,54 @@ class Sample:
 
         if h.bins is None and h.hist_range is None:
             bin_edges1 = np.histogram_bin_edges(data1, bins="auto")
-            if "int32" in data1.typestr:
-                nbin=len(bin_edges1)-1
-                length=bin_edges1[-1]-bin_edges1[0]
-                bin_edges1=np.linspace(bin_edges1[0]-1,bin_edges1[-1]+1,int((length+2)*nbin/length))
-            axis1 = hist.axis.Variable(bin_edges1, name=h.collection_name +"/"+ var1)
+            # re madness to do camelcase splitting
+            if ("int32" in data1.typestr) or (
+                re.sub("([A-Z][a-z]+)", r" \1", re.sub("([A-Z]+)", r" \1", h.var_name)).split()[0] == "is"
+            ):
+                nbin = len(bin_edges1) - 1
+                length = bin_edges1[-1] - bin_edges1[0]
+                bin_edges1 = np.linspace(bin_edges1[0] - 1, bin_edges1[-1] + 1, int((length + 2) * nbin / length))
+            axis1 = hist.axis.Variable(bin_edges1, name=h.collection_name + "/" + var1)
             bin_edges2 = np.histogram_bin_edges(data2, bins="auto")
-            if "int32" in data2.typestr:
-                nbin=len(bin_edges2)-1
-                length=bin_edges2[-1]-bin_edges2[0]
-                bin_edges2=np.linspace(bin_edges2[0]-1,bin_edges2[-1]+1,int((length+2)*nbin/length))
-            axis2 = hist.axis.Variable(bin_edges2, name=h.collection_name2 +"/"+ var2)
+            # re madness to do camelcase splitting
+            if ("int32" in data2.typestr) or (
+                re.sub("([A-Z][a-z]+)", r" \1", re.sub("([A-Z]+)", r" \1", h.var_name2)).split()[0] == "is"
+            ):
+                nbin = len(bin_edges2) - 1
+                length = bin_edges2[-1] - bin_edges2[0]
+                bin_edges2 = np.linspace(bin_edges2[0] - 1, bin_edges2[-1] + 1, int((length + 2) * nbin / length))
+            axis2 = hist.axis.Variable(bin_edges2, name=h.collection_name2 + "/" + var2)
         elif h.hist_range is None and h.bins is not None:
             min_range1, max_range1 = ak.min(data1), ak.max(data1)
-            if "int32" in data1.typestr:
-                min_range1=min_range1-1
-                max_range1=max_range1+1
-            axis1 = hist.axis.Regular(h.bins[0], min_range1, max_range1, name=h.collection_name +"/"+ var1)
+            # re madness to do camelcase splitting
+            if ("int32" in data1.typestr) or (
+                re.sub("([A-Z][a-z]+)", r" \1", re.sub("([A-Z]+)", r" \1", h.var_name)).split()[0] == "is"
+            ):
+                min_range1 = min_range1 - 1
+                max_range1 = max_range1 + 1
+            axis1 = hist.axis.Regular(h.bins[0], min_range1, max_range1, name=h.collection_name + "/" + var1)
 
             min_range2, max_range2 = ak.min(data2), ak.max(data2)
-            if "int32" in data2.typestr:
-                min_range2=min_range2-1
-                max_range2=max_range2+1
+            # re madness to do camelcase splitting
+            if ("int32" in data2.typestr) or (
+                re.sub("([A-Z][a-z]+)", r" \1", re.sub("([A-Z]+)", r" \1", h.var_name2)).split()[0] == "is"
+            ):
+                min_range2 = min_range2 - 1
+                max_range2 = max_range2 + 1
 
-            axis2 = hist.axis.Regular(h.bins[1], min_range2, max_range2, name=h.collection_name2 +"/"+ var2)
+            axis2 = hist.axis.Regular(h.bins[1], min_range2, max_range2, name=h.collection_name2 + "/" + var2)
         elif h.hist_range is not None and h.bins is None:
-            axis1 = hist.axis.Regular(50, *h.hist_range[0], name=h.collection_name +"/"+ var1)
-            axis2 = hist.axis.Regular(50, *h.hist_range[1], name=h.collection_name2 +"/"+ var2)
+            axis1 = hist.axis.Regular(50, *h.hist_range[0], name=h.collection_name + "/" + var1)
+            axis2 = hist.axis.Regular(50, *h.hist_range[1], name=h.collection_name2 + "/" + var2)
         else:
-            axis1 = hist.axis.Regular(h.bins[0], *h.hist_range[0], name=h.collection_name +"/"+ var1)
-            axis2 = hist.axis.Regular(h.bins[1], *h.hist_range[1], name=h.collection_name2 +"/"+ var2)
+            axis1 = hist.axis.Regular(h.bins[0], *h.hist_range[0], name=h.collection_name + "/" + var1)
+            axis2 = hist.axis.Regular(h.bins[1], *h.hist_range[1], name=h.collection_name2 + "/" + var2)
 
         hist_obj = hist.Hist(axis1, axis2)
         hist_obj.fill(data1, data2)
         if h.collection_name2 != h.collection_name:
-            self.hist_file[f"{h.collection_name}-{h.collection_name2.split('/')[-1]}/{h.var_name}_vs_{h.var_name2}"] = hist_obj
+            self.hist_file[f"{h.collection_name}-{h.collection_name2.split('/')[-1]}/{h.var_name}_vs_{h.var_name2}"] = (
+                hist_obj
+            )
         else:
             self.hist_file[f"{h.collection_name}/{h.var_name}_vs_{h.var_name2}"] = hist_obj
