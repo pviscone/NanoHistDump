@@ -70,7 +70,7 @@ def define(events):
     events["TkCryCluGenMatchAll","dPt"]=events.TkCryCluGenMatchAll.Tk.pt-events.TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle.pt
 
     events["TkCryCluGenMatch"] = select_match(
-        events.TkCryCluGenMatchAll, events.TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle.idx, strategy="min_dPt"
+        events.TkCryCluGenMatchAll, events.TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle.idx, strategy="minabs_dPtCryClu"
     )
 
     events["n", "TkCryCluGenMatchAll"], events["n", "TkCryCluGenMatchAllPt"] = count_idx_pt(
@@ -90,7 +90,7 @@ def define(events):
     events["TkGenCryCluGenMatchAll"]=events["TkCryCluGenMatchAll"][events["TkCryCluGenMatchAll","dR"]<0.1]
 
     events["TkGenCryCluGenMatch"] = select_match(
-        events.TkGenCryCluGenMatchAll, events.TkGenCryCluGenMatchAll.CryCluGenMatchAll.GenEle.idx, strategy="min_dPt"
+        events.TkGenCryCluGenMatchAll, events.TkGenCryCluGenMatchAll.CryCluGenMatchAll.GenEle.idx, strategy="minabs_dPtCryClu"
     )
 
     events["n", "TkGenCryCluGenMatchAll"], events["n", "TkGenCryCluGenMatchAllPt"] = count_idx_pt(

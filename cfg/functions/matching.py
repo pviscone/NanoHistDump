@@ -41,21 +41,28 @@ def match_to_gen(obj, gen, dr_cut=0.1, etaphi_vars=(("eta", "phi"), ("eta", "phi
     return cart
 
 
-def select_match(matched_objs, idxs, strategy="min_dPt"):
+def select_match(matched_objs, idxs, strategy="minabs_dPt"):
     max_idx = ak.max(idxs)
     selected_list = []
     for i in range(max_idx + 1):
         mask = idxs == i
 
-        if strategy == "min_dPt":
-            selected_mask = ak.argmin(matched_objs[mask].dPt, axis=1, keepdims=True)
+        func,var=strategy.split("_")
 
-        if strategy == "min_dR":
-            selected_mask = ak.argmin(matched_objs[mask].dR, axis=1, keepdims=True)
 
-        if "max_pt" in strategy:
-            name = strategy.split("_")[-1]
-            selected_mask = ak.argmax(matched_objs[mask][name].pt, axis=1, keepdims=True)
+        if func.lower()=="minabs":
+            selected_mask = ak.argmin(np.abs(matched_objs[mask][var]), axis=1, keepdims=True)
+
+        elif func.lower()=="maxabs":
+            selected_mask = ak.argmax(np.abs(matched_objs[mask][var]), axis=1, keepdims=True)
+
+        elif func.lower()=="min":
+            selected_mask = ak.argmin(matched_objs[mask][var], axis=1, keepdims=True)
+
+        elif func.lower()=="max":
+            selected_mask = ak.argmax(matched_objs[mask][var], axis=1, keepdims=True)
+
+
 
         selected_list.append(matched_objs[mask][selected_mask])
     return ak.concatenate(selected_list, axis=1)
