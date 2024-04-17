@@ -1,7 +1,14 @@
 import awkward as ak
 import numpy as np
 
-from cfg.functions.matching import count_idx_dpt, count_idx_pt, match_obj_to_couple, match_to_gen, select_match
+from cfg.functions.matching import (
+    count_idx_dpt,
+    count_idx_pt,
+    count_idx_pt_isReal,
+    match_obj_to_couple,
+    match_to_gen,
+    select_match,
+)
 from cfg.functions.utils import add_collection, set_name
 from python.hist_struct import Hist
 
@@ -37,8 +44,8 @@ def define(events):
     #!-------------------Tk-Gen Matching-------------------!#
     events["TkGenMatchAll"] = match_to_gen(events.Tk, events.GenEle)
     events["TkGenMatch"] = select_match(events.TkGenMatchAll, events.TkGenMatchAll.GenEle.idx)
-    events["n", "TkGenMatchAll"], events["n", "TkGenMatchAllPt"] = count_idx_pt(
-        events.TkGenMatchAll.GenEle.idx, events.GenEle.pt
+    events["n", "TkGenMatchAll"], events["n", "TkGenMatchAllPt"], events["n", "TkGenMatchAllNisReal"] = count_idx_pt_isReal(
+        events.TkGenMatchAll.GenEle.idx, events.GenEle.pt,events.TkGenMatchAll.Tk.isReal
     )
 
     _,events["n", "TkGenMatchAllMinAbsdPt"], events["n", "TkGenMatchAllMaxAbsdPt"] = count_idx_dpt(
@@ -73,9 +80,10 @@ def define(events):
         events.TkCryCluGenMatchAll, events.TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle.idx, strategy="minabs_dPtCryClu"
     )
 
-    events["n", "TkCryCluGenMatchAll"], events["n", "TkCryCluGenMatchAllPt"] = count_idx_pt(
+    events["n", "TkCryCluGenMatchAll"], events["n", "TkCryCluGenMatchAllPt"], events["n", "TkCryCluGenMatchAllNisReal"] = count_idx_pt_isReal(
         events.TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle.idx,
         events.GenEle.pt,
+        events.TkCryCluGenMatchAll.Tk.isReal
     )
 
     _, events["n", "TkCryCluGenMatchAllMinAbsdPt"], events["n", "TkCryCluGenMatchAllMaxAbsdPt"] = count_idx_dpt(
@@ -93,9 +101,10 @@ def define(events):
         events.TkGenCryCluGenMatchAll, events.TkGenCryCluGenMatchAll.CryCluGenMatchAll.GenEle.idx, strategy="minabs_dPtCryClu"
     )
 
-    events["n", "TkGenCryCluGenMatchAll"], events["n", "TkGenCryCluGenMatchAllPt"] = count_idx_pt(
+    events["n", "TkGenCryCluGenMatchAll"], events["n", "TkGenCryCluGenMatchAllPt"], events["n", "TkGenCryCluGenMatchAllNisReal"] = count_idx_pt_isReal(
         events.TkGenCryCluGenMatchAll.CryCluGenMatchAll.GenEle.idx,
         events.GenEle.pt,
+        events.TkGenCryCluGenMatchAll.Tk.isReal,
     )
 
     _, events["n", "TkGenCryCluGenMatchAllMinAbsdPt"], events["n", "TkGenCryCluGenMatchAllMaxAbsdPt"] = count_idx_dpt(
@@ -121,9 +130,14 @@ hists_TkGenMatch = [
     Hist("TkGenMatch/GenEle", "pt", hist_range=(0, 100), bins=50),
     Hist("TkGenMatch/GenEle", "eta", hist_range=(-2, 2), bins=50),
     Hist("TkGenMatch/GenEle", "phi", hist_range=(-3.14, 3.14), bins=50),
-    Hist("n", "TkGenMatchAllPt", "n", "TkGenMatchAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
-    Hist("n", "TkGenMatchAllMaxAbsdPt", "n", "TkGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]),
-    Hist("n", "TkGenMatchAllMinAbsdPt", "n", "TkGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]),
+    Hist("TkGenMatch", "dPt","TkGenMatch/Tk", "isReal", hist_range=((-100,100),(0,3)), bins=[50,3]),
+    Hist("TkGenMatch", "dR","TkGenMatch/Tk", "isReal", hist_range=((0,0.1),(0,3)), bins=[50,3]),
+    Hist("TkGenMatchAll", "dPt","TkGenMatchAll/Tk", "isReal", hist_range=((-100,100),(0,3)), bins=[50,3]),
+    Hist("TkGenMatchAll", "dR","TkGenMatchAll/Tk", "isReal", hist_range=((0,0.1),(0,3)), bins=[50,3]),
+    Hist("n", "TkGenMatchAllPt", "n", "TkGenMatchAll", hist_range=[(0, 100), (0, 11)], bins=[50, 11]),
+    Hist("n", "TkGenMatchAllMaxAbsdPt", "n", "TkGenMatchAll", hist_range=[(-1, 100), (0, 11)], bins=[101, 11]),
+    Hist("n", "TkGenMatchAllMinAbsdPt", "n", "TkGenMatchAll", hist_range=[(-1, 100), (0, 11)], bins=[101, 11]),
+    Hist("n", "TkGenMatchAll", "n", "TkGenMatchAllNisReal", hist_range=[(0,11), (0, 11)], bins=[11, 11]),
 ]
 
 hists_TkEleGenMatch = [
@@ -139,26 +153,44 @@ hists_TkCryCluGenMatch = [
     Hist("TkCryCluGenMatch/CryCluGenMatchAll/GenEle", "pt", hist_range=(0, 100), bins=50),
     Hist("TkCryCluGenMatch/CryCluGenMatchAll/GenEle", "eta", hist_range=(-2, 2), bins=50),
     Hist("TkCryCluGenMatch/CryCluGenMatchAll/GenEle", "phi", hist_range=(-3.14, 3.14), bins=50),
-    Hist("n", "TkCryCluGenMatchAllPt", "n", "TkCryCluGenMatchAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
+    Hist("TkCryCluGenMatch", "dPt","TkCryCluGenMatch/Tk", "isReal", hist_range=((-100,100),(0,3)), bins=[50,3]),
+    Hist("TkCryCluGenMatch", "dR","TkCryCluGenMatch/Tk", "isReal", hist_range=((0,0.1),(0,3)), bins=[50,3]),
+    Hist("TkCryCluGenMatch", "dPtCryClu","TkCryCluGenMatch/Tk", "isReal", hist_range=((-100,100),(0,3)), bins=[50,3]),
+    Hist("TkCryCluGenMatch", "dRCryClu","TkCryCluGenMatch/Tk", "isReal", hist_range=((0,0.2),(0,3)), bins=[50,3]),
+    Hist("TkCryCluGenMatchAll", "dPt","TkCryCluGenMatchAll/Tk", "isReal", hist_range=((-100,100),(0,3)), bins=[50,3]),
+    Hist("TkCryCluGenMatchAll", "dR","TkCryCluGenMatchAll/Tk", "isReal", hist_range=((0,0.1),(0,3)), bins=[50,3]),
+    Hist("TkCryCluGenMatchAll", "dPtCryClu","TkCryCluGenMatchAll/Tk", "isReal", hist_range=((-100,100),(0,3)), bins=[50,3]),
+    Hist("TkCryCluGenMatchAll", "dRCryClu","TkCryCluGenMatchAll/Tk", "isReal", hist_range=((0,0.2),(0,3)), bins=[50,3]),
+    Hist("n", "TkCryCluGenMatchAllPt", "n", "TkCryCluGenMatchAll", hist_range=[(0, 100), (0, 11)], bins=[50, 11]),
     Hist(
-        "n", "TkCryCluGenMatchAllMaxAbsdPt", "n", "TkCryCluGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]
+        "n", "TkCryCluGenMatchAllMaxAbsdPt", "n", "TkCryCluGenMatchAll", hist_range=[(-1, 100), (0, 11)], bins=[101, 11]
     ),
     Hist(
-        "n", "TkCryCluGenMatchAllMinAbsdPt", "n", "TkCryCluGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]
+        "n", "TkCryCluGenMatchAllMinAbsdPt", "n", "TkCryCluGenMatchAll", hist_range=[(-1, 100), (0, 11)], bins=[101, 11]
     ),
+    Hist("n", "TkCryCluGenMatchAll", "n", "TkCryCluGenMatchAllNisReal", hist_range=[(0,11), (0, 11)], bins=[11, 11]),
 ]
 
 hists_TkGenCryCluGenMatch = [
     Hist("TkGenCryCluGenMatch/CryCluGenMatchAll/GenEle", "pt", hist_range=(0, 100), bins=50),
     Hist("TkGenCryCluGenMatch/CryCluGenMatchAll/GenEle", "eta", hist_range=(-2, 2), bins=50),
     Hist("TkGenCryCluGenMatch/CryCluGenMatchAll/GenEle", "phi", hist_range=(-3.14, 3.14), bins=50),
-    Hist("n", "TkGenCryCluGenMatchAllPt", "n", "TkGenCryCluGenMatchAll", hist_range=[(0, 100), (0, 10)], bins=[50, 10]),
+    Hist("TkGenCryCluGenMatch", "dPt","TkGenCryCluGenMatch/Tk", "isReal", hist_range=((-100,100),(0,3)), bins=[50,3]),
+    Hist("TkGenCryCluGenMatch", "dR","TkGenCryCluGenMatch/Tk", "isReal", hist_range=((0,0.1),(0,3)), bins=[50,3]),
+    Hist("TkGenCryCluGenMatch", "dPtCryClu","TkGenCryCluGenMatch/Tk", "isReal", hist_range=((-100,100),(0,3)), bins=[50,3]),
+    Hist("TkGenCryCluGenMatch", "dRCryClu","TkGenCryCluGenMatch/Tk", "isReal", hist_range=((0,0.2),(0,3)), bins=[50,3]),
+    Hist("TkGenCryCluGenMatchAll", "dPt","TkGenCryCluGenMatchAll/Tk", "isReal", hist_range=((-100,100),(0,3)), bins=[50,3]),
+    Hist("TkGenCryCluGenMatchAll", "dR","TkGenCryCluGenMatchAll/Tk", "isReal", hist_range=((0,0.1),(0,3)), bins=[50,3]),
+    Hist("TkGenCryCluGenMatchAll", "dPtCryClu","TkGenCryCluGenMatchAll/Tk", "isReal", hist_range=((-100,100),(0,3)), bins=[50,3]),
+    Hist("TkGenCryCluGenMatchAll", "dRCryClu","TkGenCryCluGenMatchAll/Tk", "isReal", hist_range=((0,0.2),(0,3)), bins=[50,3]),
+    Hist("n", "TkGenCryCluGenMatchAllPt", "n", "TkGenCryCluGenMatchAll", hist_range=[(0, 100), (0, 11)], bins=[50, 11]),
     Hist(
-        "n", "TkGenCryCluGenMatchAllMaxAbsdPt", "n", "TkGenCryCluGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]
+        "n", "TkGenCryCluGenMatchAllMaxAbsdPt", "n", "TkGenCryCluGenMatchAll", hist_range=[(-1, 100), (0, 11)], bins=[101, 11]
     ),
     Hist(
-        "n", "TkGenCryCluGenMatchAllMinAbsdPt", "n", "TkGenCryCluGenMatchAll", hist_range=[(-1, 100), (0, 10)], bins=[101, 10]
+        "n", "TkGenCryCluGenMatchAllMinAbsdPt", "n", "TkGenCryCluGenMatchAll", hist_range=[(-1, 100), (0, 11)], bins=[101, 11]
     ),
+    Hist("n", "TkGenCryCluGenMatchAll", "n", "TkGenCryCluGenMatchAllNisReal", hist_range=[(0,11), (0, 11)], bins=[11, 11]),
 ]
 
 

@@ -97,6 +97,26 @@ def count_idx_pt(builder_n, builder_pt, couplegenidx, genpt):
     return builder_n, builder_pt
 
 
+
+@builders(3)
+@nb.jit
+def count_idx_pt_isReal(builder_n, builder_pt, builder_isReal, couplegenidx, genpt, isReal):
+    for event_idx, genpt_ev in enumerate(genpt):
+        genidx_ev = np.arange(len(genpt_ev))
+        couplegenidx_ev = np.array(couplegenidx[event_idx])
+        builder_n.begin_list()
+        builder_pt.begin_list()
+        builder_isReal.begin_list()
+        for idx in genidx_ev:
+            builder_n.append(np.sum(couplegenidx_ev == idx))
+            builder_isReal.append(np.sum(np.bitwise_and(couplegenidx_ev == idx, np.array(isReal[event_idx])==1)))
+            builder_pt.append(genpt_ev[idx])
+        builder_n.end_list()
+        builder_pt.end_list()
+        builder_isReal.end_list()
+    return builder_n, builder_pt, builder_isReal
+
+
 @builders(3)
 @nb.jit
 def count_idx_dpt(builder_n,builder_mindpt, builder_maxdpt, couplegenidx, coupledpt, genpt):
