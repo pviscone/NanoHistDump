@@ -1,15 +1,15 @@
 dataset:
-    input_dir: /eos/cms/store/cmst3/group/l1tr/pviscone/ntuples/
+    input_dir: /data/pviscone/PhD-notes/submodules/NanoHistDump/root_files/131Xv3
     out_dir: /data/pviscone/PhD-notes/submodules/NanoHistDump/out
     tree_name: Events
     tag: 131Xv3
 
 samples:
     DoubleElectrons:
-        input_sample_dir: DoubleElectron_FlatPt-1To100
+        input_sample_dir: DoubleElectron
 
     MinBias:
-        input_sample_dir: SingleNeutrino_PU200
+        input_sample_dir: MinBias
 
 scheme:
     "CaloEGammaCrystalClustersGCT": "CryClu"
