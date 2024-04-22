@@ -176,3 +176,40 @@ def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta"
         del cart[name2, to_compare, "old_eta"]
         del cart[name2, to_compare, "old_phi"]
     return cart
+
+
+def match_obj_to_obj(obj, couple, dr_cut=0.2, etaphi_vars=(("eta", "phi"), ("eta", "phi"))):
+    obj2_to_match = couple
+    obj_to_match = obj
+
+    if etaphi_vars[0] != ("eta", "phi"):
+        obj_to_match["old_eta"] = obj_to_match["eta"]
+        obj_to_match["old_phi"] = obj_to_match["phi"]
+        obj_to_match["eta"] = obj_to_match[etaphi_vars[0][0]]
+        obj_to_match["phi"] = obj_to_match[etaphi_vars[0][1]]
+
+    if etaphi_vars[1] != ("eta", "phi"):
+        obj2_to_match["old_eta"] = obj2_to_match["eta"]
+        obj2_to_match["old_phi"] = obj2_to_match["phi"]
+        obj2_to_match["eta"] = obj2_to_match[etaphi_vars[1][0]]
+        obj2_to_match["phi"] = obj2_to_match[etaphi_vars[1][1]]
+
+    cart, name1, name2 = cartesian(obj_to_match, obj2_to_match)
+
+    dr = cart[name1].deltaR(cart[name2])
+    cart = cart[dr < dr_cut]
+    cart["dR"] = dr[dr < dr_cut]
+    cart["dPt"] = cart[name1].pt - cart[name2].pt
+    cart=ak.drop_none(cart)
+    if etaphi_vars[0] != ("eta", "phi"):
+        cart[name1, "eta"] = cart[name1, "old_eta"]
+        cart[name1, "phi"] = cart[name1, "old_phi"]
+        del cart[name1, "old_eta"]
+        del cart[name1, "old_phi"]
+
+    if etaphi_vars[1] != ("eta", "phi"):
+        cart[name2, "eta"] = cart[name2, "old_eta"]
+        cart[name2, "phi"] = cart[name2, "old_phi"]
+        del cart[name2, "old_eta"]
+        del cart[name2, "old_phi"]
+    return cart
