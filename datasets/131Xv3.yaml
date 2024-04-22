@@ -6,10 +6,10 @@ dataset:
 
 samples:
     DoubleElectrons:
-        input_sample_dir: DoubleElectron_FlatPt-1To100-gun/DoubleElectron1To100-PU200_v102A/240410_085024/0000
+        input_sample_dir: DoubleElectron_FlatPt-1To100/DoubleElectron_FlatPt-1To100_PU200_131Xv3a
 
-    #MinBias:
-        #input_sample_dir: MinBias
+    MinBias:
+        input_sample_dir: SingleNeutrino_PU200/SingleNeutrino_PU200_131Xv3a
 
 scheme:
     "CaloEGammaCrystalClustersGCT": "CryClu"
