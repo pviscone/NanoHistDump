@@ -121,3 +121,4 @@ metadata.json
 out/*.root
 .ignore
 *.npy
+*.parquet
