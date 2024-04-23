@@ -55,7 +55,7 @@ plt.xlabel("Boosting Round")
 plt.ylabel("Log Loss")
 plt.legend()
 plt.grid()
-plt.save("fig/BDT_Loss_131Xv3.pdf")
+plt.savefig("fig/BDT_Loss_131Xv3.pdf")
 # %%
 #!-----------------Plot BDT Score-----------------!#
 func = lambda x: x
