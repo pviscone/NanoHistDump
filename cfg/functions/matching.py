@@ -200,7 +200,7 @@ def match_obj_to_obj(obj, couple, dr_cut=0.2, etaphi_vars=(("eta", "phi"), ("eta
     cart = cart[dr < dr_cut]
     cart["dR"] = dr[dr < dr_cut]
     cart["dPt"] = cart[name1].pt - cart[name2].pt
-    cart=ak.drop_none(cart)
+    #cart=ak.drop_none(cart)
     if etaphi_vars[0] != ("eta", "phi"):
         cart[name1, "eta"] = cart[name1, "old_eta"]
         cart[name1, "phi"] = cart[name1, "old_phi"]

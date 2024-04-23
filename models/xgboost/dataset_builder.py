@@ -17,7 +17,7 @@ def parse_yaml(filename):
     with open(filename) as stream:
         return yaml.load(stream, Loader=yaml.FullLoader)
 
-save=False
+save=True
 tag="131Xv3"
 dataset = parse_yaml(f"../../datasets/{tag}_local.yaml")
 
@@ -68,7 +68,7 @@ for sample in sample_generator(dataset):
 
 
     if sample.sample_name == "MinBias":
-        events=events[:40000]
+        events=events[:100000]
         events["Tk", "isReal"]=2
         events=events[ak.num(events.GenEle)==0]
         events["TkCryCluGenMatchAll"] = match_obj_to_obj(
@@ -81,27 +81,21 @@ for sample in sample_generator(dataset):
 
 
 
-
-    flatted=ak.flatten(ak.drop_none(events["TkCryCluGenMatchAll"]))
-
-
-
-
     if sample.sample_name == "DoubleElectrons":
-        cryclu=flatted.CryCluGenMatch.CryClu
-        tk=flatted.Tk
+        cryclu=events["TkCryCluGenMatchAll"].CryCluGenMatch.CryClu
+        tk=events["TkCryCluGenMatchAll"].Tk
     elif sample.sample_name == "MinBias":
-        cryclu=flatted.CryClu
-        tk=flatted.Tk
+        cryclu=events["TkCryCluGenMatchAll"].CryClu
+        tk=events["TkCryCluGenMatchAll"].Tk
 
     for collection in features:
         for variable in features[collection]:
             if collection=="CryClu":
-                temp_df[f"{collection}_{variable}"]=cryclu[variable]
+                temp_df[f"{collection}_{variable}"]=ak.flatten(ak.drop_none(cryclu[variable]))
             elif collection=="Tk":
-                temp_df[f"{collection}_{variable}"]=tk[variable]
+                temp_df[f"{collection}_{variable}"]=ak.flatten(ak.drop_none(tk[variable]))
             elif collection=="Couple":
-                temp_df[f"{variable}"]=flatted[variable]
+                temp_df[f"{variable}"]=ak.flatten(ak.drop_none(events["TkCryCluGenMatchAll",variable]))
 
     df=pd.concat([df,temp_df])
 
