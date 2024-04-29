@@ -6,10 +6,13 @@ def add_collection(events, name):
 
 
 def get_name(arr):
-    if "name" not in arr._layout.content.parameters:
-        return arr._layout.content.__repr__().split("<parameter name='collection_name'>'")[1].split("'</parameter>")[0]
-    else:
-        return arr._layout.content.parameters["name"]
+    try:
+        if "name" not in arr._layout.content.parameters:
+            return arr._layout.content.__repr__().split("<parameter name='collection_name'>'")[1].split("'</parameter>")[0]
+        else:
+            return arr._layout.content.parameters["name"]
+    except:
+        return arr._layout.__repr__().split("<parameter name='collection_name'>'")[1].split("'</parameter>")[0]
 
 def set_name(arr, name):
     arr._layout.content.parameters["name"] = name
