@@ -27,7 +27,8 @@ features_minbias=[
     tk_path+"chi2Bend",
     tk_path+"chi2RPhi",
     tk_path+"chi2RZ",
-    couple_path+"dRCryClu",
+    couple_path+"dEtaCryClu",
+    couple_path+"dPhiCryClu",
     couple_path+"dPtCryClu",
 ]
 features=["CryCluGenMatchAll/"+feat if feat.startswith("CryClu/") else feat for feat in features_minbias]
@@ -41,7 +42,8 @@ def define(events, sample_name):
         events["TkCryCluGenMatchAll"] = match_obj_to_obj(
             events.Tk, events.CryClu, etaphi_vars=(("caloEta", "caloPhi"), ("eta", "phi"))
         )
-        events["TkCryCluGenMatchAll", "dRCryClu"] = events["TkCryCluGenMatchAll", "dR"]
+        events["TkCryCluGenMatchAll", "dEtaCryClu"] = events["TkCryCluGenMatchAll", "dEta"]
+        events["TkCryCluGenMatchAll", "dPhiCryClu"] = events["TkCryCluGenMatchAll", "dPhi"]
         events["TkCryCluGenMatchAll", "dPtCryClu"] = events["TkCryCluGenMatchAll", "dPt"]
         events["TkCryCluGenMatchAll","BDTscore"]=xgb_wrapper(model, events["TkCryCluGenMatchAll"],features_minbias)
     else:
@@ -63,14 +65,11 @@ def define(events, sample_name):
             events.Tk, events.CryCluGenMatchAll, "CryClu", etaphi_vars=(("caloEta", "caloPhi"), ("eta", "phi"))
         )
 
-        events["TkCryCluGenMatchAll", "dR"] = events.TkCryCluGenMatchAll.Tk.deltaR(
-            events.TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle
-        )
-
-        events["TkCryCluGenMatchAll", "dPt"] = (
-            events.TkCryCluGenMatchAll.Tk.pt - events.TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle.pt
-        )
         events["TkCryCluGenMatchAll","BDTscore"]=xgb_wrapper(model, events["TkCryCluGenMatchAll"],features)
+
+        events["TkCryCluGenMatchAllReal"]=events["TkCryCluGenMatchAll"][events.TkCryCluGenMatchAll.Tk.isReal==1]
+        events["TkCryCluGenMatchAllFake"]=events["TkCryCluGenMatchAll"][events.TkCryCluGenMatchAll.Tk.isReal!=1]
+
 
     return events
 

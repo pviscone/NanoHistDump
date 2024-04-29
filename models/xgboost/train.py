@@ -11,10 +11,10 @@ pt_weight = df["pt_weight"].to_numpy()
 weight = pt_weight
 weight[y == 1] = weight[y == 1] * np.sum(pt_weight[y == 0]) / np.sum(pt_weight[y == 1])
 
-df_train = df.drop(columns=["label", "Tk_isReal", "ev_id", "pt_weight"])
+df = df.drop(columns=["label", "Tk_isReal", "ev_id", "pt_weight"])
 
 X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
-    df_train, y, weight, test_size=0.2, random_state=666
+    df, y, weight, test_size=0.2, random_state=666
 )
 
 
@@ -145,4 +145,4 @@ hep.cms.lumitext("PU200")
 plt.savefig("fig/BDT_Efficiency_131Xv3.pdf")
 
 #%%
-xgb.save(model,"BDT_131Xv3.model")
+model.save_model("BDT_131Xv3.json")

@@ -29,7 +29,7 @@ dataset["samples"] = {sample: dataset["samples"][sample] for sample in labels}
 features = {
     "CryClu": ["standaloneWP","showerShape", "isolation"],
     "Tk": ["hitPattern","nStubs", "chi2Bend", "chi2RPhi", "chi2RZ","isReal"],
-    "Couple": ["dRCryClu","dPtCryClu","ev_id","label"] #,"pt_weights"
+    "Couple": ["dEtaCryClu","dPhiCryClu","dPtCryClu","ev_id","label"] #,"pt_weights"
 }
 
 Barrel_eta = 1.479
@@ -76,7 +76,8 @@ for sample in sample_generator(dataset):
         )
         events["TkCryCluGenMatchAll","ev_id"]=events["ev_id"]
         events["TkCryCluGenMatchAll","label"]=np.zeros(len(events))
-        events["TkCryCluGenMatchAll","dRCryClu"]=events["TkCryCluGenMatchAll","dR"]
+        events["TkCryCluGenMatchAll","dEtaCryClu"]=events["TkCryCluGenMatchAll","dEta"]
+        events["TkCryCluGenMatchAll","dPhiCryClu"]=events["TkCryCluGenMatchAll","dPhi"]
         events["TkCryCluGenMatchAll","dPtCryClu"]=events["TkCryCluGenMatchAll","dPt"]
 
 

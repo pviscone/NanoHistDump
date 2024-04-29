@@ -159,9 +159,14 @@ def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta"
 
     cart, name1, name2 = cartesian(obj_to_match, couple_to_match)
 
-    dr = cart[name1].deltaR(cart[name2, to_compare])
+    deta=cart[name1].deltaeta(cart[name2, to_compare])
+    dphi=cart[name1].deltaphi(cart[name2, to_compare])
+    dr=np.sqrt(deta**2+dphi**2)
+
     cart = cart[dr < dr_cut]
     cart[f"dR{to_compare}"] = dr[dr < dr_cut]
+    cart[f"dEta{to_compare}"] = deta[dr < dr_cut]
+    cart[f"dPhi{to_compare}"] = dphi[dr < dr_cut]
     cart[f"dPt{to_compare}"] = cart[name1].pt - cart[name2, to_compare].pt
 
     if etaphi_vars[0] != ("eta", "phi"):
@@ -196,10 +201,15 @@ def match_obj_to_obj(obj, couple, dr_cut=0.2, etaphi_vars=(("eta", "phi"), ("eta
 
     cart, name1, name2 = cartesian(obj_to_match, obj2_to_match)
 
-    dr = cart[name1].deltaR(cart[name2])
+    deta=cart[name1].deltaeta(cart[name2])
+    dphi=cart[name1].deltaphi(cart[name2])
+    dr=np.sqrt(deta**2+dphi**2)
+
     cart = cart[dr < dr_cut]
     cart["dR"] = dr[dr < dr_cut]
     cart["dPt"] = cart[name1].pt - cart[name2].pt
+    cart["dEta"] = deta[dr < dr_cut]
+    cart["dPhi"] = dphi[dr < dr_cut]
     #cart=ak.drop_none(cart)
     if etaphi_vars[0] != ("eta", "phi"):
         cart[name1, "eta"] = cart[name1, "old_eta"]
