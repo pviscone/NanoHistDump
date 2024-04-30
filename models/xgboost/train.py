@@ -1,7 +1,12 @@
 # %%
+import matplotlib.pyplot as plt
+import mplhep as hep
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 from sklearn.model_selection import train_test_split
+
+hep.style.use("CMS")
 
 #!-----------------Create a dataset-----------------!#
 df = pd.read_parquet("131Xv3.parquet")
@@ -16,14 +21,16 @@ df = df.drop(columns=["label", "Tk_isReal", "ev_id", "pt_weight"])
 X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
     df, y, weight, test_size=0.2, random_state=666
 )
-
-
-# %%
-#!-----------------Train a BDT-----------------!#
-import xgboost as xgb
-
 dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
 dtest = xgb.DMatrix(X_test, label=y_test, weight=w_test)
+
+#model=xgb.Booster()
+#model.load_model("BDT_131Xv3.json")
+# %%
+#!-----------------Train a BDT-----------------!#
+
+
+
 # create model instance
 params = {
     "tree_method": "hist",
@@ -43,10 +50,8 @@ preds_train = model.predict(dtrain)
 
 # %%
 #!-----------------Plot Loss-----------------!#
-import matplotlib.pyplot as plt
-import mplhep as hep
 
-hep.style.use("CMS")
+
 
 plt.plot(eval_result["train"]["logloss"], label="Train")
 plt.plot(eval_result["eval"]["logloss"], label="Test")
