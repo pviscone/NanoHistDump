@@ -259,12 +259,16 @@ class Sample:
 
 
     def _add_hists(self, h: Hist) -> None:
-        if h.dim == 1:
-            pprint(f"Creating hist {h.collection_name}/{h.var_name}")
-            self._add_hists_1d(h)
-        elif h.dim == 2:
-            pprint(f"Creating hist {h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}")
-            self._add_hists_2d(h)
+        try:
+            if h.dim == 1:
+                pprint(f"Creating hist {h.collection_name}/{h.var_name}")
+                self._add_hists_1d(h)
+            elif h.dim == 2:
+                pprint(f"Creating hist {h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}")
+                self._add_hists_2d(h)
+        except Exception as error:
+            pprint(f"----------------------------------------------\n----------------------------------------------\n----------------------------------------------\nError creating hist {h.collection_name}/{h.var_name}\n----------------------------------------------\n----------------------------------------------\n----------------------------------------------\n")
+            print(error)
 
     def _add_hists_1d(self, h: Hist) -> None:
         names = h.collection_name.split("/")
