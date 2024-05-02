@@ -5,7 +5,7 @@ import numpy as np
 from cfg.functions.utils import builders, cartesian
 
 
-def match_to_gen(obj, gen, dr_cut=0.1, etaphi_vars=(("eta", "phi"), ("eta", "phi"))):
+def match_to_gen(obj, gen, dr_cut=0.1, etaphi_vars=(("eta", "phi"), ("eta", "phi")),nested=False):
     gen_to_match = gen
     obj_to_match = obj
     if etaphi_vars[1] != ("eta", "phi"):
@@ -19,7 +19,7 @@ def match_to_gen(obj, gen, dr_cut=0.1, etaphi_vars=(("eta", "phi"), ("eta", "phi
         obj_to_match["eta"] = obj_to_match[etaphi_vars[0][0]]
         obj_to_match["phi"] = obj_to_match[etaphi_vars[0][1]]
 
-    cart, name1, name2 = cartesian(obj_to_match, gen_to_match)
+    cart, name1, name2 = cartesian(obj_to_match, gen_to_match,nested=nested)
 
     dr = cart[name1].deltaR(cart[name2])
     cart = cart[dr < dr_cut]
@@ -141,7 +141,7 @@ def count_idx_dpt(builder_n,builder_mindpt, builder_maxdpt, couplegenidx, couple
     return builder_n, builder_mindpt, builder_maxdpt
 
 
-def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta", "phi"), ("eta", "phi"))):
+def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta", "phi"), ("eta", "phi")),nested=False):
     couple_to_match = couple
     obj_to_match = obj
 
@@ -157,7 +157,7 @@ def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta"
         couple_to_match[to_compare, "eta"] = couple_to_match[to_compare, etaphi_vars[1][0]]
         couple_to_match[to_compare, "phi"] = couple_to_match[to_compare, etaphi_vars[1][1]]
 
-    cart, name1, name2 = cartesian(obj_to_match, couple_to_match)
+    cart, name2, name1 = cartesian(couple_to_match, obj_to_match,nested=nested)
 
     deta=cart[name1].deltaeta(cart[name2, to_compare])
     dphi=cart[name1].deltaphi(cart[name2, to_compare])
@@ -183,7 +183,7 @@ def match_obj_to_couple(obj, couple, to_compare, dr_cut=0.2, etaphi_vars=(("eta"
     return cart
 
 
-def match_obj_to_obj(obj, couple, dr_cut=0.2, etaphi_vars=(("eta", "phi"), ("eta", "phi"))):
+def match_obj_to_obj(obj, couple, dr_cut=0.2, etaphi_vars=(("eta", "phi"), ("eta", "phi")),nested=False):
     obj2_to_match = couple
     obj_to_match = obj
 
@@ -199,7 +199,7 @@ def match_obj_to_obj(obj, couple, dr_cut=0.2, etaphi_vars=(("eta", "phi"), ("eta
         obj2_to_match["eta"] = obj2_to_match[etaphi_vars[1][0]]
         obj2_to_match["phi"] = obj2_to_match[etaphi_vars[1][1]]
 
-    cart, name1, name2 = cartesian(obj_to_match, obj2_to_match)
+    cart, name1, name2 = cartesian(obj_to_match, obj2_to_match,nested=nested)
 
     deta=cart[name1].deltaeta(cart[name2])
     dphi=cart[name1].deltaphi(cart[name2])

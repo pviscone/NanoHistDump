@@ -32,13 +32,13 @@ def builders(n=1):
     return decorator
 
 
-def cartesian(obj1, obj2):
+def cartesian(obj1, obj2,nested=False):
     name1 = get_name(obj1)
     name2 = get_name(obj2)
 
-    cart = ak.cartesian([obj1, obj2])
+    cart = ak.cartesian([obj1, obj2],nested=nested)
     cart = ak.zip({name1: cart["0"], name2: cart["1"]})
-    argcart = ak.argcartesian([obj1, obj2])
+    argcart = ak.argcartesian([obj1, obj2],nested=nested)
 
     cart[name1, "idx"] = argcart["0"]
     cart[name2, "idx"] = argcart["1"]
