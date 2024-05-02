@@ -29,9 +29,9 @@ features_minbias=[
 ]
 features=["CryCluGenMatch/"+feat if feat.startswith("CryClu/") else feat for feat in features_minbias]
 
-#score_cuts=np.concatenate([np.linspace(0.5,0.8,10),np.linspace(0.8,0.9,15)])
+
 def define(events, sample_name):
-    #add_collection(events, "triggers")
+
     events["CryClu","showerShape"] = events.CryClu.e2x5/events.CryClu.e5x5
     if sample_name == "MinBias":
         events = events[:40000]
@@ -81,29 +81,11 @@ def define(events, sample_name):
 
     #!-------------------TkEle-Gen Matching-------------------!#
     events["TkEleGenMatch"] = match_to_gen(
-        events.GenEle, events.Tk, etaphi_vars=(("caloeta", "calophi"), ("eta", "phi")),nested=True
+        events.GenEle, events.TkEle, etaphi_vars=(("caloeta", "calophi"), ("eta", "phi")),nested=True
     )
     mindpt_mask=ak.argmin(np.abs(events["TkEleGenMatch"].dPt),axis=2,keepdims=True)
     events["TkEleGenMatch"] = ak.flatten(events["TkEleGenMatch"][mindpt_mask],axis=2)
 
-    """
-    #! You should move the cuts to the hist struct, not creating collections in loops
-    for cut in score_cuts:
-        events["TkCryCluGenMatchAll",f"isBDT{cut*1000:.0f}"]=events["TkCryCluGenMatchAll","BDTscore"]>=cut
-
-        #For rate vs threshold cut
-        trigger_cut=ak.max(events["TkCryCluGenMatchAll",f"isBDT{cut*1000:.0f}"],axis=1)
-
-        events["triggers",f"isBDT{cut*1000:.0f}"]=trigger_cut
-        events["triggers",f"isElectron{cut*1000:.0f}"]=ak.any(ak.mask(events,trigger_cut==1).TkCryCluGenMatchAll.Tk.isReal==1,axis=1)
-
-        #max because they are all equal and avoid me to deal with missing values
-        if sample_name != "MinBias":
-            events["triggers",f"genPt{cut*1000:.0f}"]=ak.max(ak.mask(events,trigger_cut==1).TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle.pt,axis=1)
-            events["triggers",f"genEta{cut*1000:.0f}"]=ak.max(ak.mask(events,trigger_cut==1).TkCryCluGenMatchAll.CryCluGenMatchAll.GenEle.eta,axis=1)
-
-    events["triggers","maxBDT"]=ak.max(events["TkCryCluGenMatchAll","BDTscore"],axis=1)
-    """
 
     if sample_name != "MinBias":
         events["TkCryCluGenMatchReal"]=events["TkCryCluGenMatch"][events.TkCryCluGenMatch.Tk.isReal==1]
@@ -126,19 +108,9 @@ hists = [#signal
         Hist("GenEle","eta",bins=eta_bins),
         Hist("TkEleGenMatch/GenEle","pt",bins=pt_bins),
         Hist("TkEleGenMatch/GenEle","eta",bins=eta_bins),
-        #bkg
-        #Hist("TkCryCluGenMatch","BDTscore","TkCryCluGenMatch/CryClu","pt",bins=[bdt_bins,pt_bins]),
-        #Hist("TkCryCluGenMatch","BDTscore","TkCryCluGenMatch/CryClu","eta",bins=[bdt_bins,eta_bins]),
-        #Hist("TkCryCluGenMatch/CryClu","pt",bins=pt_bins),
-        #Hist("TkCryCluGenMatch/CryClu","eta",bins=eta_bins),
 
         #all
         Hist("TkCryCluGenMatch","BDTscore","TkCryCluGenMatch/Tk","isReal",bins=[bdt_bins,np.array([0,1,2,3])]),
         Hist("TkCryCluGenMatch","BDTscore",bins=bdt_bins),
         Hist("TkCryCluGenMatch/Tk","isReal",bins=np.array([0,1,2,3])),
     ]
-""" Hist("GenEle","eta",**eta_bins),
-Hist("TkCryCluGenMatch/CryCluGenMatch/GenEle","pt",**pt_bins),
-Hist("TkCryCluGenMatch/CryCluGenMatch/GenEle","eta",**eta_bins),
-Hist("TkCryCluGenMatch/Tk","isReal",hist_range=[0,3],bins=3),
-Hist("TkCryCluGenMatch","BDTscore",**bdt_bins), """
