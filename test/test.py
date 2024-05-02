@@ -26,7 +26,28 @@ events["GenEle"] = events.GenEle[np.abs(events.GenEle.eta) < BarrelEta]
 events = events[ak.num(events.GenEle) > 0]
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # %%
+#!ELLIPTIC
 events["CCGenAll"]=match_to_gen(events.CryClu,events.GenEle,etaphi_vars=(("eta","phi"),("caloeta","calophi")))
 events["CCGen"]=select_match(events["CCGenAll"],events["CCGenAll"].GenEle.idx)
 events["CCGen"]=events["CCGen"][events.CCGen.GenEle.idx==0]
@@ -45,6 +66,16 @@ events["Tk"]=events.Tk[np.abs(events.Tk.dphiGen)<3]
 events["Tk","eta"]=events.Tk.caloEta
 events["Tk","phi"]=events.Tk.caloPhi
 events["Tk","dphiCC"],events["Tk","detaCC"]=dphi_eta(events.CCGen.CryClu[:,0],events.Tk,1,1)
+
+
+
+
+
+
+
+
+
+
 
 
 #%%
@@ -82,7 +113,7 @@ plt.grid()
 
 
 # %%
-
+#!SAME TRACK
 def same_track(tk):
     res=[]
     for ev_idx, ev_tk in enumerate(tk):

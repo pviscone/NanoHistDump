@@ -19,12 +19,36 @@ TH2 = python.plotters.TH2
 
 hep.style.use("CMS")
 
-filename = "../out/BarrelMatchStudies_DoubleElectrons_131Xv3.root"
-file = uproot.open(filename)
+filename1 = "../out/BDT_DoubleElectrons_131Xv3.root"
+filename2 = "../out/BDT_MinBias_131Xv3.root"
+signal = uproot.open(filename1)
+pu = uproot.open(filename2)
 
 
 # %%
-n=file["TkCryCluGenMatch/Tk/isReal"].to_numpy()
-nn=n[0][n[0]!=0]
+#!Rate vs eff
+N_pu = pu["triggers/maxBDT"].to_numpy()[0].sum()
+N_signal = signal["triggers/maxBDT"].to_numpy()[0].sum()
+
+score_list = [key.split("/")[-1].split(";")[0].split("isBDT")[-1] for key in pu.keys() if "isBDT" in key]
+
+fpr=[]
+tpr=[]
+for score in score_list:
+    fpr.append(pu[f"triggers/isBDT{score};1"].to_numpy()[0][-1]/N_pu)
+    tpr.append(signal[f"triggers/isBDT{score};1"].to_numpy()[0][-1]/N_signal)
+
 import matplotlib.pyplot as plt
-plt.pie(nn,labels=["Other","Electron", "PileUp"], autopct='%.2f%%')
+import numpy as np
+plt.plot(np.array(fpr)*2760.0*11246/1000, tpr)
+plt.grid()
+plt.xlabel("Rate [kHz]")
+plt.ylabel("Electron Efficiency")
+
+
+#%%
+hep.histplot((pu["triggers/maxBDT"]).to_hist(),density=True,label="PU")
+hep.histplot((signal["triggers/maxBDT"]).to_hist(),density=True,label="Signal")
+plt.grid()
+plt.ylabel("Density")
+plt.legend()
