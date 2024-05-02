@@ -27,7 +27,7 @@ dataset["samples"] = {sample: dataset["samples"][sample] for sample in labels}
 
 
 features = {
-    "CryClu": ["standaloneWP","showerShape", "isolation"],
+    "CryClu": ["standaloneWP","showerShape", "isolation","pt"],
     "Tk": ["hitPattern","nStubs", "chi2Bend", "chi2RPhi", "chi2RZ","isReal"],
     "Couple": ["dEtaCryClu","dPhiCryClu","dPtCryClu","ev_id","label"] #,"pt_weights"
 }

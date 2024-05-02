@@ -12,14 +12,15 @@ hep.style.use("CMS")
 df = pd.read_parquet("131Xv3.parquet")
 y = (df["label"].astype(int) & df["Tk_isReal"] == 1).astype(int).to_numpy()
 
+pt = df["CryClu_pt"].to_numpy()
 pt_weight = df["pt_weight"].to_numpy()
 weight = pt_weight
 weight[y == 1] = weight[y == 1] * np.sum(pt_weight[y == 0]) / np.sum(pt_weight[y == 1])
 
-df = df.drop(columns=["label", "Tk_isReal", "ev_id", "pt_weight"])
+df = df.drop(columns=["label", "Tk_isReal", "ev_id", "pt_weight","CryClu_pt"])
 
-X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
-    df, y, weight, test_size=0.2, random_state=666
+X_train, X_test, y_train, y_test, w_train, w_test,pt_train,pt_test = train_test_split(
+    df, y, weight, pt, test_size=0.2, random_state=666
 )
 dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
 dtest = xgb.DMatrix(X_test, label=y_test, weight=w_test)
@@ -36,10 +37,13 @@ params = {
     "tree_method": "hist",
     "max_depth": 5,
     "learning_rate": 0.1,
+    #"lambda": 500,
+    #"alpha": 500,
     "objective": "binary:logistic",
     "eval_metric": "logloss",
 }
 num_round = 35
+#num_round = 50
 evallist = [(dtrain, "train"), (dtest, "eval")]
 # fit model
 eval_result = {}
@@ -86,7 +90,7 @@ ax1.hist(
     density=True,
     histtype="step",
     linewidth=2,
-    weights=dtest.get_weight()[y_test == 1],
+    #weights=dtest.get_weight()[y_test == 1],
 )
 
 ax1.hist(
@@ -97,7 +101,7 @@ ax1.hist(
     density=True,
     histtype="step",
     linewidth=2,
-    weights=dtest.get_weight()[y_test == 0],
+    #weights=dtest.get_weight()[y_test == 0],
 )
 
 
@@ -118,9 +122,35 @@ fig.savefig("fig/BDT_Score_131Xv3.pdf")
 # %%
 #!-----------------Plot ROC Curve-----------------!#
 from sklearn.metrics import roc_curve
+pt_bin=[0,5,10,15,20,50,999]
 
-fpr, tpr, thresholds = roc_curve(y_test, preds_test, sample_weight=w_test)
-plt.plot(fpr, tpr)
+for iteration,(low,high) in enumerate(zip(pt_bin[:-1],pt_bin[1:])):
+    mask=(pt_test>low)&(pt_test<=high)
+
+
+    fpr, tpr, thresholds = roc_curve(y_test[mask], preds_test[mask], #sample_weight=w_test[mask]
+    )
+
+    def find_nearest(array, value):
+        idx = (np.abs(array - value)).argmin()
+        return idx, array[idx]
+
+    plt.plot(fpr, tpr,label=f"{low}-{high} GeV",linewidth=2)
+    colors=["red","blue","green","orange","purple"]
+    for i,cut in enumerate([0.2,0.4,0.6,0.8,0.9]):
+        idx, val = find_nearest(thresholds, cut)
+        if iteration==0:
+            label=f"BDT>{cut}"
+        else:
+            label=None
+        plt.plot(fpr[idx], tpr[idx], "o",label=label,color=colors[i],markersize=8)
+        #plt.text(fpr[idx]*1, tpr[idx]*0.98, f"{cut:.2f}", fontsize=12)
+
+    plt.xlim(-0.02,0.25)
+    plt.ylim(0.4,1.02)
+
+
+plt.legend()
 plt.xlabel("False Positive Rate")
 plt.ylabel("True Positive Rate")
 plt.grid()
@@ -129,6 +159,8 @@ hep.cms.lumitext("PU200")
 plt.savefig("fig/BDT_ROC_131Xv3.pdf")
 # %%
 #!-----------------Plot Efficiency & FOM-----------------!#
+fpr, tpr, thresholds = roc_curve(y_test, preds_test, #sample_weight=w_test
+)
 plt.plot(thresholds, tpr, label="Signal efficiency")
 plt.plot(thresholds, fpr, label="PU efficiency")
 
