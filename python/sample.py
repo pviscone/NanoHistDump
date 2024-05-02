@@ -115,6 +115,7 @@ class Sample:
         self.tag = tag
         self.hist_file = None
         self.delete_on_add_hist = delete_on_add_hist
+        self.errors={}
 
     @property
     def fields(self):
@@ -229,33 +230,38 @@ class Sample:
             if h.single_var:
                 self._add_hists(h)
             else:
-                if h.collection_name != "":
-                    names = h.collection_name.split("/")
-                    arr = self.events[*names]
-                else:
-                    arr = self.events
-
-                def recursive(arr, h):
-                    if len(arr.fields) > 0:
-                        fields = arr.fields
-                        for field in fields:
-                            if len(arr[field].fields) > 0:
-                                if h.collection_name != "":
-                                    new_name = h.collection_name + "/" + field
-                                else:
-                                    new_name = field
-                                new_h = Hist(new_name, hist_range=h.hist_range, bins=h.bins)
-                            else:
-                                new_h = Hist(h.collection_name, field, hist_range=h.hist_range, bins=h.bins)
-                            recursive(arr[field], new_h)
-                    #when all the collection is consumed and each variable is deleted, the recursive function will see the empty collection as a variable. Delete it
-                    elif h.collection_name=="":
-                            del self.events[*h.var_name.split("/")]
+                try:
+                    if h.collection_name != "":
+                        names = h.collection_name.split("/")
+                        arr = self.events[*names]
                     else:
-                        new_h = Hist(h.collection_name, h.var_name, hist_range=h.hist_range, bins=h.bins)
-                        self._add_hists(new_h)
+                        arr = self.events
 
-                recursive(arr, h)
+                    def recursive(arr, h):
+                        if len(arr.fields) > 0:
+                            fields = arr.fields
+                            for field in fields:
+                                if len(arr[field].fields) > 0:
+                                    if h.collection_name != "":
+                                        new_name = h.collection_name + "/" + field
+                                    else:
+                                        new_name = field
+                                    new_h = Hist(new_name, hist_range=h.hist_range, bins=h.bins)
+                                else:
+                                    new_h = Hist(h.collection_name, field, hist_range=h.hist_range, bins=h.bins)
+                                recursive(arr[field], new_h)
+                        #when all the collection is consumed and each variable is deleted, the recursive function will see the empty collection as a variable. Delete it
+                        elif h.collection_name=="":
+                                del self.events[*h.var_name.split("/")]
+                        else:
+                            new_h = Hist(h.collection_name, h.var_name, hist_range=h.hist_range, bins=h.bins)
+                            self._add_hists(new_h)
+
+                    recursive(arr, h)
+                except Exception as error:
+                    pprint(f"\nError creating hist {h.collection_name}\n")
+                    self.errors[f"{h.collection_name}"]=error
+                    pprint(error)
 
 
     def _add_hists(self, h: Hist) -> None:
@@ -267,8 +273,15 @@ class Sample:
                 pprint(f"Creating hist {h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}")
                 self._add_hists_2d(h)
         except Exception as error:
-            pprint(f"----------------------------------------------\n----------------------------------------------\n----------------------------------------------\nError creating hist {h.collection_name}/{h.var_name}\n----------------------------------------------\n----------------------------------------------\n----------------------------------------------\n")
+            if h.dim == 1:
+                pprint(f"\nError creating hist {h.collection_name}/{h.var_name}\n")
+                self.errors[f"{h.collection_name}/{h.var_name}"]=error
+            elif h.dim == 2:
+                pprint(f"\nError creating hist {h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}\n")
+                self.errors[f"{h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}"]=error
             print(error)
+
+
 
     def _add_hists_1d(self, h: Hist) -> None:
         names = h.collection_name.split("/")
@@ -383,3 +396,12 @@ class Sample:
             )
         else:
             self.hist_file[f"{h.collection_name}/{h.var_name}_vs_{h.var_name2}"] = hist_obj
+
+    def hist_report(self):
+        n_errors=len(self.errors)
+        if n_errors>0:
+            pprint(f"\n{n_errors} errors occurred while creating the histograms")
+            for hist in self.errors:
+                pprint(f"{hist}: {self.errors[hist]}")
+        else:
+            pprint("\nAll histograms created successfully")
