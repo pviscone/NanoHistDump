@@ -1,3 +1,11 @@
+import awkward as ak
+import hist
+from rich import print as pprint
+
+from python.TH1utils import auto_axis, auto_range, fill
+from python.TH2utils import fill2D
+
+
 class Hist:
     class Hist:
         """
@@ -37,6 +45,8 @@ class Hist:
         var_name2=None,
         hist_range=None,
         bins=None,
+        fill_mode="normal",
+        weight=None,
     ):
         """
         Initialize a HistStruct object.
@@ -69,3 +79,82 @@ class Hist:
         else:
             self.entire_collection = False
             self.single_var = True
+
+        self.delete_on_add_hist = True
+        self.fill_mode = fill_mode
+        self.weight = weight
+
+
+    def add_hist(self,events) -> None:
+        if self.weight is not None:
+            path=self.weight.split("/")
+            self.weight = events[*path]
+        if self.dim == 1:
+            pprint(f"Creating hist {self.collection_name}/{self.var_name}")
+            hist_obj=self._add_hist_1d(events)
+        elif self.dim == 2:
+            pprint(f"Creating hist {self.collection_name}/{self.var_name}_vs_{self.collection_name2}/{self.var_name2}")
+            hist_obj=self._add_hist_2d(events)
+        return hist_obj
+
+
+
+    def _add_hist_1d(self, events) -> None:
+        names = self.collection_name.split("/")
+        data = events[*names][self.var_name]
+        if data.ndim > 1:
+            data = ak.flatten(data)
+        data = ak.drop_none(data)
+
+        if "numpy" in str(type(self.bins)):
+            axis = hist.axis.Variable(self.bins, name=self.var_name)
+        elif self.hist_range is None and self.bins is None:
+            axis=auto_axis(data,self)
+        elif self.hist_range is None and self.bins is not None:
+            axis=auto_range(data,self)
+        elif self.hist_range is not None and self.bins is None:
+            axis = hist.axis.Regular(50, *self.hist_range, name=self.var_name)
+        else:
+            axis = hist.axis.Regular(self.bins, *self.hist_range, name=self.var_name)
+
+        hist_obj = hist.Hist(axis)
+        hist_obj=fill(hist_obj,data,self.fill_mode,weight=self.weight)
+
+        if self.delete_on_add_hist:
+            del events[*names, self.var_name]
+
+        return hist_obj
+
+    def _add_hist_2d(self, events) -> None:
+        var1 = self.var_name
+        var2 = self.var_name2
+        names1 = self.collection_name.split("/")
+        names2 = self.collection_name2.split("/")
+        data1 = events[*names1][var1]
+        data2 = events[*names2][var2]
+        if data1.ndim > 1:
+            data1 = ak.flatten(data1)
+        if data2.ndim > 1:
+            data2 = ak.flatten(data2)
+        data1 = ak.drop_none(data1)
+        data2 = ak.drop_none(data2)
+
+        if "numpy" in str(type(self.bins[0])):
+            axis1= hist.axis.Variable(self.bins[0], name=self.collection_name + "/" + var1)
+            axis2= hist.axis.Variable(self.bins[1], name=self.collection_name2 + "/" + var2)
+        elif self.hist_range is None and self.bins is None:
+            axis1=auto_axis(data1,self)
+            axis2=auto_axis(data2,self)
+        elif self.hist_range is None and self.bins is not None:
+            axis1=auto_range(data1,self)
+            axis2=auto_range(data2,self)
+        elif self.hist_range is not None and self.bins is None:
+            axis1 = hist.axis.Regular(50, *self.hist_range[0], name=self.collection_name + "/" + var1)
+            axis2 = hist.axis.Regular(50, *self.hist_range[1], name=self.collection_name2 + "/" + var2)
+        else:
+            axis1 = hist.axis.Regular(self.bins[0], *self.hist_range[0], name=self.collection_name + "/" + var1)
+            axis2 = hist.axis.Regular(self.bins[1], *self.hist_range[1], name=self.collection_name2 + "/" + var2)
+
+
+        hist_obj = hist.Hist(axis1, axis2)
+        return fill2D(hist_obj,data1, data2,self.fill_mode,weight=self.weight)
