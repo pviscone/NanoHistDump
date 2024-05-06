@@ -34,21 +34,21 @@ def define(events, sample_name):
 
     events["CryClu","showerShape"] = events.CryClu.e2x5/events.CryClu.e5x5
     if sample_name == "MinBias":
-        events = events[:40000]
+        #events = events[:40000]
 
         events["Tk", "isReal"] = 2
         events = events[ak.num(events.GenEle) == 0]
 
-        events["TkCryCluGenMatch"] = match_obj_to_obj(
+        events["TkCryCluMatch"] = match_obj_to_obj(
             events.CryClu, events.Tk, etaphi_vars=(("eta", "phi"), ("caloEta", "caloPhi")),nested=True
         )
-        events["TkCryCluGenMatch", "dEtaCryClu"] = events["TkCryCluGenMatch", "dEta"]
-        events["TkCryCluGenMatch", "dPhiCryClu"] = events["TkCryCluGenMatch", "dPhi"]
-        events["TkCryCluGenMatch", "dPtCryClu"] = events["TkCryCluGenMatch", "dPt"]
-        events["TkCryCluGenMatch","BDTscore"]=xgb_wrapper(model, events["TkCryCluGenMatch"],features_minbias,nested=True)
+        events["TkCryCluMatch", "dEtaCryClu"] = events["TkCryCluMatch", "dEta"]
+        events["TkCryCluMatch", "dPhiCryClu"] = events["TkCryCluMatch", "dPhi"]
+        events["TkCryCluMatch", "dPtCryClu"] = events["TkCryCluMatch", "dPt"]
+        events["TkCryCluMatch","BDTscore"]=xgb_wrapper(model, events["TkCryCluMatch"],features_minbias,nested=True)
 
-        maxbdt_mask=ak.argmax(events["TkCryCluGenMatch"].BDTscore,axis=2,keepdims=True)
-        events["TkCryCluGenMatch"]=ak.flatten(events["TkCryCluGenMatch"][maxbdt_mask],axis=2)
+        maxbdt_mask=ak.argmax(events["TkCryCluMatch"].BDTscore,axis=2,keepdims=True)
+        events["TkCryCluMatch"]=ak.flatten(events["TkCryCluMatch"][maxbdt_mask],axis=2)
     else:
         #!-------------------GEN Selection-------------------!#
         events["GenEle"] = events.GenEle[np.abs(events.GenEle.eta) < BarrelEta]
@@ -94,7 +94,7 @@ def define(events, sample_name):
 
 pt_bins = np.linspace(1,101,50)
 eta_bins = np.linspace(-2,2,50)
-bdt_bins = np.array([0,0.4,0.6,0.8,1.01])
+bdt_bins = np.array([0,0.2, 0.4,0.6,0.8,1.01])
 
 hists = [#signal
         Hist("TkCryCluGenMatch","BDTscore","TkCryCluGenMatch/CryCluGenMatch/GenEle","pt",bins=[bdt_bins,pt_bins]),
@@ -108,9 +108,15 @@ hists = [#signal
         Hist("GenEle","eta",bins=eta_bins),
         Hist("TkEleGenMatch/GenEle","pt",bins=pt_bins),
         Hist("TkEleGenMatch/GenEle","eta",bins=eta_bins),
-
-        #all
         Hist("TkCryCluGenMatch","BDTscore","TkCryCluGenMatch/Tk","isReal",bins=[bdt_bins,np.array([0,1,2,3])]),
         Hist("TkCryCluGenMatch","BDTscore",bins=bdt_bins),
         Hist("TkCryCluGenMatch/Tk","isReal",bins=np.array([0,1,2,3])),
+
+        #bkg
+        Hist("TkCryCluMatch/CryClu","pt","TkCryCluMatch","BDTscore",bins=[pt_bins,bdt_bins],fill_mode="rate_pt_vs_score"),
+        Hist("TkCryCluMatch/CryClu","pt",bins=pt_bins),
+        Hist("TkCryCluMatch","BDTscore",bins=bdt_bins),
+
+
+
     ]
