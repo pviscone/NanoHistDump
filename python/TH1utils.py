@@ -27,11 +27,21 @@ def auto_range(data,h):
         max_range = max_range + 1
     return hist.axis.Regular(h.bins, min_range, max_range, name=h.var_name)
 
+def split_and_flat(events,collection_name,var_name):
+    names = collection_name.split("/")
+    data = events[*names][var_name]
+    data = ak.drop_none(data)
+    if data.ndim > 1:
+        data = ak.flatten(data)
+    return data
 
-def fill(hist_obj,data,mode,weight=None):
-    if mode=="normal":
+def fill(h,events,fill_mode,weight=None,**kwargs):
+    hist_obj=h.hist_obj
+    if fill_mode=="normal":
+        data=split_and_flat(events,h.collection_name,h.var_name)
         hist_obj.fill(data,weight=weight)
-    elif mode=="rate":
+
+    elif fill_mode=="rate":
         pass
 
 

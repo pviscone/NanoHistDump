@@ -226,7 +226,7 @@ class Sample:
             try:
                 if h.single_var:
                     to_add=h.add_hist(self.events)
-                    self.add_hist_to_file(h,to_add)
+                    self.hist_file[h.name] = to_add
 
                 else:
                     try:
@@ -255,7 +255,7 @@ class Sample:
                             else:
                                 new_h = Hist(h.collection_name, h.var_name, hist_range=h.hist_range, bins=h.bins)
                                 to_add=new_h.add_hist(self.events)
-                                self.add_hist_to_file(h,to_add)
+                                self.hist_file[h.name] = to_add
 
                         recursive(arr, h)
                     except Exception as error:
@@ -270,17 +270,6 @@ class Sample:
                     pprint(f"\nError creating hist {h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}\n")
                     self.errors[f"{h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}"]=error
                 print(error)
-
-    def add_hist_to_file(self,h,hist_obj):
-        if h.dim==1:
-            self.hist_file[f"{h.collection_name}/{h.var_name}"] = hist_obj
-        elif h.dim==2:
-            if h.collection_name2 != h.collection_name:
-                self.hist_file[f"{h.collection_name}-{h.collection_name2.split('/')[-1]}/{h.var_name}_vs_{h.var_name2}"] = (
-                hist_obj
-            )
-            else:
-                self.hist_file[f"{h.collection_name}/{h.var_name}_vs_{h.var_name2}"] = hist_obj
 
 
     def hist_report(self):
