@@ -10,14 +10,20 @@ hep.style.use("CMS")
 
 #!-----------------Create a dataset-----------------!#
 df = pd.read_parquet("131Xv3.parquet")
-y = (df["label"].astype(int) & df["Tk_isReal"] == 1).astype(int).to_numpy()
-
+mask=np.bitwise_or(
+    np.bitwise_and(df["label"]==1,df["Tk_isReal"]==1),
+    np.bitwise_and(df["label"]!=1,df["Tk_isReal"]!=1)
+)
+#y = (df["label"].astype(int) & df["Tk_isReal"] == 1).astype(int).to_numpy()
+df=df[mask]
+y=df["label"]
+ev_id=df["ev_id"]
 pt = df["CryClu_pt"].to_numpy()
 pt_weight = df["pt_weight"].to_numpy()
 weight = pt_weight
 weight[y == 1] = weight[y == 1] * np.sum(pt_weight[y == 0]) / np.sum(pt_weight[y == 1])
 
-df = df.drop(columns=["label", "Tk_isReal", "ev_id", "pt_weight","CryClu_pt"])
+df = df.drop(columns=["label", "Tk_isReal", "ev_id", "pt_weight","CryClu_pt","CryClu_idx"])
 
 X_train, X_test, y_train, y_test, w_train, w_test,pt_train,pt_test = train_test_split(
     df, y, weight, pt, test_size=0.2, random_state=666
@@ -37,8 +43,8 @@ params = {
     "tree_method": "hist",
     "max_depth": 5,
     "learning_rate": 0.1,
-    #"lambda": 500,
-    #"alpha": 500,
+    "lambda": 100,
+    "alpha": 100,
     "objective": "binary:logistic",
     "eval_metric": "logloss",
 }
@@ -71,10 +77,10 @@ func = lambda x: x
 bins = np.linspace(0, 1, 10)
 
 train_hist_signal = np.histogram(
-    func(preds_train[y_train == 1]), density=True, bins=bins, weights=dtrain.get_weight()[y_train == 1]
+    func(preds_train[y_train == 1]), density=True, bins=bins, #weights=dtrain.get_weight()[y_train == 1]
 )
 train_hist_pu = np.histogram(
-    func(preds_train[y_train == 0]), density=True, bins=bins, weights=dtrain.get_weight()[y_train == 0]
+    func(preds_train[y_train == 0]), density=True, bins=bins, #weights=dtrain.get_weight()[y_train == 0]
 )
 centers = (train_hist_signal[1][1:] + train_hist_signal[1][:-1]) / 2
 
@@ -146,16 +152,15 @@ for iteration,(low,high) in enumerate(zip(pt_bin[:-1],pt_bin[1:])):
         plt.plot(fpr[idx], tpr[idx], "o",label=label,color=colors[i],markersize=8)
         #plt.text(fpr[idx]*1, tpr[idx]*0.98, f"{cut:.2f}", fontsize=12)
 
-    plt.xlim(-0.02,0.25)
-    plt.ylim(0.4,1.02)
+
 
 
 plt.legend()
 plt.xlabel("False Positive Rate")
 plt.ylabel("True Positive Rate")
 plt.grid()
-hep.cms.text("Simulation Phase-2")
-hep.cms.lumitext("PU200")
+hep.cms.text("Simulation")
+hep.cms.lumitext("All the Cluster-Track Couples")
 plt.savefig("fig/BDT_ROC_131Xv3.pdf")
 # %%
 #!-----------------Plot Efficiency & FOM-----------------!#
@@ -183,3 +188,63 @@ plt.savefig("fig/BDT_Efficiency_131Xv3.pdf")
 
 #%%
 model.save_model("BDT_131Xv3.json")
+
+
+
+
+#%% #!Per cluster roc
+df = pd.read_parquet("131Xv3.parquet")
+mask=np.bitwise_or(
+    np.bitwise_and(df["label"]==1,df["Tk_isReal"]==1),
+    np.bitwise_and(df["label"]!=1,df["Tk_isReal"]!=1)
+)
+
+df=df[mask]
+y=df["label"]
+ev_id=df["ev_id"]
+pt = df["CryClu_pt"].to_numpy()
+
+X=xgb.DMatrix(df.drop(columns=["label", "Tk_isReal", "ev_id", "pt_weight","CryClu_pt","CryClu_idx"]), label=y)
+preds=model.predict(X)
+
+
+df["score"]=preds
+
+new_df=df.groupby(["ev_id","CryClu_idx"]).max("score")
+
+
+#!-----------------Plot ROC Curve-----------------!#
+from sklearn.metrics import roc_curve
+pt_bin=[0,5,10,15,20,50,999]
+
+for iteration,(low,high) in enumerate(zip(pt_bin[:-1],pt_bin[1:])):
+    mask=(new_df["CryClu_pt"]>low)&(new_df["CryClu_pt"]<=high)
+
+
+    fpr, tpr, thresholds = roc_curve(new_df["label"][mask],  new_df["score"][mask], #sample_weight=new_df["pt_weight"][mask]
+    )
+
+    def find_nearest(array, value):
+        idx = (np.abs(array - value)).argmin()
+        return idx, array[idx]
+
+    plt.plot(fpr, tpr,label=f"{low}-{high} GeV",linewidth=2)
+    colors=["red","blue","green","orange","purple"]
+    for i,cut in enumerate([0.2,0.4,0.6,0.8,0.9]):
+        idx, val = find_nearest(thresholds, cut)
+        if iteration==0:
+            label=f"BDT>{cut}"
+        else:
+            label=None
+        plt.plot(fpr[idx], tpr[idx], "o",label=label,color=colors[i],markersize=8)
+        #plt.text(fpr[idx]*1, tpr[idx]*0.98, f"{cut:.2f}", fontsize=12)
+
+plt.legend()
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.grid()
+hep.cms.text("Simulation")
+hep.cms.lumitext("Single Cluster-Track couple")
+
+plt.savefig("fig/BDT_ROCperCluster_131Xv3.pdf")
+# %%
