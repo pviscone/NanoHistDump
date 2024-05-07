@@ -17,7 +17,7 @@ def parse_yaml(filename):
     with open(filename) as stream:
         return yaml.load(stream, Loader=yaml.FullLoader)
 
-save=True
+save=False
 tag="131Xv3"
 dataset = parse_yaml(f"../../datasets/{tag}_local.yaml")
 
@@ -27,13 +27,13 @@ dataset["samples"] = {sample: dataset["samples"][sample] for sample in labels}
 
 
 features = {
-    "CryClu": ["standaloneWP","showerShape", "isolation","pt"],
+    "CryClu": ["standaloneWP","showerShape", "isolation","pt","idx"],
     "Tk": ["hitPattern","nStubs", "chi2Bend", "chi2RPhi", "chi2RZ","isReal"],
     "Couple": ["dEtaCryClu","dPhiCryClu","dPtCryClu","ev_id","label"] #,"pt_weights"
 }
 
 Barrel_eta = 1.479
-
+old_n=0
 df = pd.DataFrame()
 for sample in sample_generator(dataset):
     temp_df = pd.DataFrame()
@@ -42,7 +42,7 @@ for sample in sample_generator(dataset):
 
     events["CryClu","showerShape"] = events.CryClu.e2x5/events.CryClu.e5x5
 
-    events["ev_id"]=np.arange(len(events))
+    events["ev_id"]=np.arange(len(events))+old_n
 
 
     if sample.sample_name == "DoubleElectrons":
@@ -99,6 +99,7 @@ for sample in sample_generator(dataset):
                 temp_df[f"{variable}"]=ak.flatten(ak.drop_none(events["TkCryCluGenMatchAll",variable]))
 
     df=pd.concat([df,temp_df])
+    old_n=len(events)
 
 
 #%%
