@@ -45,7 +45,7 @@ def define(events, sample_name):
         events["TkCryCluMatch", "dEtaCryClu"] = events["TkCryCluMatch", "dEta"]
         events["TkCryCluMatch", "dPhiCryClu"] = events["TkCryCluMatch", "dPhi"]
         events["TkCryCluMatch", "dPtCryClu"] = events["TkCryCluMatch", "dPt"]
-        events["TkCryCluMatch","BDTscore"]=xgb_wrapper(model, events["TkCryCluMatch"],features_minbias,nested=True)
+        events["TkCryCluMatch","BDTscore"]=xgb_wrapper(model, events["TkCryCluMatch"],features_minbias,nested=True,layout_template=events.TkCryCluMatch.dPtCryClu.layout)
 
         maxbdt_mask=ak.argmax(events["TkCryCluMatch"].BDTscore,axis=2,keepdims=True)
         events["TkCryCluMatch"]=ak.flatten(events["TkCryCluMatch"][maxbdt_mask],axis=2)
@@ -71,7 +71,7 @@ def define(events, sample_name):
             events.Tk, events.CryCluGenMatch, "CryClu", etaphi_vars=(("caloEta", "caloPhi"), ("eta", "phi")),nested=True
         )
 
-        events["TkCryCluGenMatch","BDTscore"]=xgb_wrapper(model, events["TkCryCluGenMatch"],features,nested=True)
+        events["TkCryCluGenMatch","BDTscore"]=xgb_wrapper(model, events["TkCryCluGenMatch"],features,nested=True,layout_template=events.TkCryCluGenMatch.dPtCryClu.layout)
 
 
         #!-------------------BDT selection-------------------!#
