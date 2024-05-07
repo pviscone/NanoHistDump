@@ -26,4 +26,5 @@ def fill2D(h,events,fill_mode="normal",weight=None,**kwargs):
         hist_obj.axes[0].label="Online pT cut"
         hist_obj.axes[1].label="Score cut"
         h.name=h.name.rsplit("/",2)[0]+"/rate_pt_vs_score"
-    return hist_obj*freq_x_bx/n_ev
+        hist_obj=hist_obj*freq_x_bx/n_ev
+    return hist_obj
