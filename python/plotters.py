@@ -1,17 +1,18 @@
 import glob
 import os
+import sys
+from functools import wraps
 
 import matplotlib.pyplot as plt
 import mplhep as hep
 import numpy as np
+from cycler import cycler
 from hist import intervals
 from matplotlib import colors
 from rich import print as pprint
 
-hep.styles.cms.CMS["patch.linewidth"] = 2
-hep.styles.cms.CMS["lines.linewidth"] = 2
-# palette list (10 colors version)
-hep.styles.cms.cmap_petroff = [
+# cms palette list (10 colors version)
+petroff10 = [
     "#3f90da",
     "#ffa90e",
     "#bd1f01",
@@ -23,9 +24,40 @@ hep.styles.cms.cmap_petroff = [
     "#92dadd",
     "#717581",
 ]
-hep.style.use("CMS")
 
-import sys
+# ACAB (All colorblinds are bastards) plz if you don't know me and you are reading this, I am just joking, these plots are not intended for publication
+acab_palette = (
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+)
+
+hep.styles.cms.CMS["patch.linewidth"] = 2
+hep.styles.cms.CMS["lines.linewidth"] = 2
+hep.styles.cms.CMS["axes.prop_cycle"] = cycler("color", acab_palette)
+
+hep.style.use(hep.style.CMS)
+
+
+def merge_kwargs(**decorator_kwargs):
+    def decorator(method):
+        @wraps(method)
+        def wrapper(self, *args, **kwargs):
+            kwargs = {**self.kwargs, **kwargs}
+            for key, value in decorator_kwargs.items():
+                kwargs.setdefault(key, value)
+            return method(self, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 def filepath_loader(path_list):
@@ -54,6 +86,7 @@ class BasePlotter:
         lumitext="PU 200",
         cmstext="Phase-2 Simulation",
         cmsloc=0,
+        **kwargs,
     ):
         if (fig is None and ax is not None) or (fig is not None and ax is None):
             raise ValueError("If fig is provided, ax must be provided as well, and vice versa.")
@@ -92,8 +125,24 @@ class BasePlotter:
         if zlim is None:
             self.zlim = (None, None)
 
+        self.kwargs = kwargs
+
+        self.markers = ["v", "^", "X", "P", "d", "*", "p", "o"]
+        self.markers_copy = self.markers.copy()
+
     def add_text(self, *args, **kwargs):
         self.ax.text(*args, **kwargs)
+
+    def add_line(self, x=None, y=None, **kwargs):
+        if x is not None and y is None:
+            self.ax.axvline(x, **kwargs)
+        elif y is not None and x is None:
+            self.ax.axhline(y, **kwargs)
+        else:
+            self.ax.plot(x, y, **kwargs)
+        sys.stderr = open(os.devnull, "w")
+        self.ax.legend()
+        sys.stderr = sys.__stderr__
 
     def save(self, filename, *args, **kwargs):
         pprint(f"Saving {filename}")
@@ -102,20 +151,34 @@ class BasePlotter:
         self.fig.savefig(filename, *args, **kwargs)
         plt.close(self.fig)
 
-    def lazy_add(self, to_file, *args,**kwargs):
-        self.lazy_args.append((to_file, args, kwargs))
+    def lazy_add(self, to_file, mode="normal", *args, **kwargs):
+        self.lazy_args.append((to_file, mode, args, kwargs))
 
-    def lazy_execute(self,file):
-        for to_file, args, kwargs in self.lazy_args:
-            data=[file[var] for var in to_file]
-            self.add(*data, *args, **kwargs)
-
+    def lazy_execute(self, file):
+        for to_file, mode, args, kwargs in self.lazy_args:
+            hists_list = [file[var] for var in to_file]
+            if mode == "normal":
+                self.add(*hists_list, *args, **kwargs)
+            elif mode == "rate_vs_pt_score":
+                score_cuts = hists_list[0].axes[1].edges[:-1]
+                for idx, cut in enumerate(score_cuts):
+                    if "cuts" in kwargs:
+                        if cut not in kwargs["cuts"]:
+                            continue
+                    label = kwargs.get("label")
+                    if label is not None:
+                        label = label.replace("%cut%", cut)
+                        kwargs.pop("label")
+                    self.add(hists_list[0][:, idx], *args, label=label, **kwargs)
+            else:
+                raise ValueError(f"mode '{mode}' is not implemented")
 
 
 class TH1(BasePlotter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @merge_kwargs()
     def add(self, hist, **kwargs):
         hep.histplot(hist, ax=self.ax, clip_on=True, **kwargs)
         sys.stderr = open(os.devnull, "w")
@@ -130,6 +193,7 @@ class TH2(BasePlotter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @merge_kwargs()
     def add(self, hist, **kwargs):
         if self.zlog:
             kwargs["norm"] = colors.LogNorm(vmin=self.zlim[0], vmax=self.zlim[1])
@@ -140,19 +204,44 @@ class TH2(BasePlotter):
 
 
 class TEfficiency(BasePlotter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, ylabel="Efficiency", **kwargs)
+    def __init__(self, yerr=True, ylabel="Efficiency", *args, **kwargs):
+        super().__init__(*args, ylabel=ylabel, **kwargs)
+        self.yerr = yerr
 
+    @merge_kwargs()
     def add(self, num, den, **kwargs):
         num = num.to_numpy()
         edges = num[1]
         num = num[0]
         den = den.to_numpy()[0]
         centers = (edges[:-1] + edges[1:]) / 2
-        err = np.nan_to_num(intervals.ratio_uncertainty(num, den, "efficiency"), 0)
         eff = np.nan_to_num(num / den, 0)
         self.ax.step(centers, eff, where="mid", **kwargs)
-        self.ax.errorbar(centers, eff, yerr=err, fmt="none", color=self.ax.lines[-1].get_color())
+
+        if self.yerr:
+            err = np.nan_to_num(intervals.ratio_uncertainty(num, den, "efficiency"), 0)
+            self.ax.errorbar(centers, eff, yerr=err, fmt="none", color=self.ax.lines[-1].get_color())
+
+        sys.stderr = open(os.devnull, "w")
+        self.ax.legend()
+        sys.stderr = sys.__stderr__
+
+
+class TRate(BasePlotter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @merge_kwargs(markeredgecolor="black", markersize=0)
+    def add(self, hist, **kwargs):
+        centers = hist.axes[0].centers
+        values = hist.values()
+        if "marker" not in kwargs:
+            kwargs["marker"] = self.markers_copy.pop(0)
+            if len(self.markers_copy) == 0:
+                self.markers_copy = self.markers.copy()
+
+        self.ax.plot(centers, values, **kwargs)
+
         sys.stderr = open(os.devnull, "w")
         self.ax.legend()
         sys.stderr = sys.__stderr__
