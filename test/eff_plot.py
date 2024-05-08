@@ -2,12 +2,7 @@
 import importlib
 import sys
 
-import mplhep as hep
 import uproot
-from rich.traceback import install
-
-#install(show_locals=False)
-
 
 sys.path.append("..")
 import python.plotters
@@ -16,14 +11,14 @@ importlib.reload(python.plotters)
 TH1 = python.plotters.TH1
 TEfficiency = python.plotters.TEfficiency
 TH2 = python.plotters.TH2
+TRate= python.plotters.TRate
 
+#hep.style.use("CMS")
 
-hep.style.use("CMS")
-
-filename1 = "../out/BDT_DoubleElectrons_131Xv3.root"
-filename2 = "../out/BDT_MinBias_131Xv3.root"
-signal = uproot.open(filename1)
-
+filename_signal = "/data/pviscone/PhD-notes/submodules/NanoHistDump/out/BDT_DoubleElectrons_131Xv3.root"
+filename_minbias = "/data/pviscone/PhD-notes/submodules/NanoHistDump/out/BDT_MinBias_131Xv3.root"
+signal = uproot.open(filename_signal)
+minbias=uproot.open(filename_minbias)
 #%%
 #!-------------------pt-------------------!#
 h2pt=signal["TkCryCluGenMatch-GenEle/BDTscore_vs_pt;1"].to_hist()
@@ -51,11 +46,20 @@ etaeff.save("eta_eff.pdf")
 
 
 #%%
+import matplotlib.pyplot as plt
 rate = TH1(name="rate_vs_pt", xlabel="Online $p_T$ cut [GeV]", ylabel="Rate [kHz]", log="y",xlim=(0,50))
 #!-------------------rate-------------------!#
-minbias=uproot.open(filename2)
+
 h2rate=minbias["TkCryCluMatch/rate_pt_vs_score;1"].to_hist()
+tkelerate=minbias["TkEleGenMatch/GenEle/pt;1"].to_hist()
 score_cuts=h2rate.axes[1].edges[:-1]
+cuts_plot=[0,0.4,0.6,0.8]
 for idx,cuts in enumerate(score_cuts):
+    if cuts not in cuts_plot:
+        continue
     rate.add(h2rate[:,idx],label=f"BDT score>{cuts:.2f}")
-rate.save("rate.pdf")
+
+rate.add(minbias["TkEle/rate_vs_ptcut;1"].to_hist(),label="TkEle",yerr=True,histtype="errorbar")
+plt.ylim(10,50000)
+plt.xlim(-1,50)
+#rate.save("rate.pdf")
