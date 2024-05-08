@@ -32,7 +32,7 @@ dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
 dtest = xgb.DMatrix(X_test, label=y_test, weight=w_test)
 
 #model=xgb.Booster()
-#model.load_model("BDT_131Xv3.json")
+#model.load_model("BDT_SigPtToPuPt_131Xv3.json")
 # %%
 #!-----------------Train a BDT-----------------!#
 
@@ -70,7 +70,7 @@ plt.xlabel("Boosting Round")
 plt.ylabel("Log Loss")
 plt.legend()
 plt.grid()
-plt.savefig("fig/BDT_Loss_131Xv3.pdf")
+plt.savefig("fig/Loss_131Xv3.pdf")
 # %%
 #!-----------------Plot BDT Score-----------------!#
 func = lambda x: x
@@ -124,7 +124,7 @@ hep.cms.lumitext("PU200")
 ax2.plot(centers,q)
 ax2.grid()
 ax2.set_yscale("log") """
-fig.savefig("fig/BDT_Score_131Xv3.pdf")
+fig.savefig("fig/Score_131Xv3.pdf")
 # %%
 #!-----------------Plot ROC Curve-----------------!#
 from sklearn.metrics import roc_curve
@@ -161,7 +161,7 @@ plt.ylabel("True Positive Rate")
 plt.grid()
 hep.cms.text("Simulation")
 hep.cms.lumitext("All the Cluster-Track Couples")
-plt.savefig("fig/BDT_ROC_131Xv3.pdf")
+plt.savefig("fig/ROC_131Xv3.pdf")
 # %%
 #!-----------------Plot Efficiency & FOM-----------------!#
 fpr, tpr, thresholds = roc_curve(y_test, preds_test, #sample_weight=w_test
@@ -184,10 +184,10 @@ plt.xlabel("BDT Threshold")
 plt.ylabel("Efficiency")
 hep.cms.text("Simulation Phase-2")
 hep.cms.lumitext("PU200")
-plt.savefig("fig/BDT_Efficiency_131Xv3.pdf")
+plt.savefig("fig/Efficiency_131Xv3.pdf")
 
 #%%
-model.save_model("BDT_131Xv3.json")
+model.save_model("BDT_SigPtToPuPt_131Xv3.json")
 
 
 
@@ -246,5 +246,5 @@ plt.grid()
 hep.cms.text("Simulation")
 hep.cms.lumitext("Single Cluster-Track couple")
 
-plt.savefig("fig/BDT_ROCperCluster_131Xv3.pdf")
+plt.savefig("fig/ROCperCluster_131Xv3.pdf")
 # %%

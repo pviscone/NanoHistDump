@@ -9,7 +9,7 @@ from python.inference import xgb_wrapper
 
 BarrelEta = 1.479
 model=xgb.Booster()
-model.load_model("/data/pviscone/PhD-notes/submodules/NanoHistDump/models/xgboost/BDT_131Xv3.json")
+model.load_model("/data/pviscone/PhD-notes/submodules/NanoHistDump/models/BDT_SigPtToPuPt/131Xv3/BDT_SigPtToPuPt_131Xv3.json")
 
 cryclu_path="CryClu/"
 tk_path="Tk/"
@@ -116,6 +116,9 @@ hists = [#signal
         Hist("TkCryCluMatch/CryClu","pt","TkCryCluMatch","BDTscore",bins=[pt_bins,bdt_bins],fill_mode="rate_pt_vs_score"),
         Hist("TkCryCluMatch/CryClu","pt",bins=pt_bins),
         Hist("TkCryCluMatch","BDTscore",bins=bdt_bins),
+
+        #TkEle
+        Hist("TkEle","pt",bins=pt_bins,fill_mode="rate_vs_ptcut"),
 
 
 
