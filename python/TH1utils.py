@@ -41,8 +41,16 @@ def fill(h,events,fill_mode,weight=None,**kwargs):
         data=split_and_flat(events,h.collection_name,h.var_name)
         hist_obj.fill(data,weight=weight)
 
-    elif fill_mode=="rate":
-        pass
+    elif fill_mode=="rate_vs_ptcut":
+        n_ev=len(events)
+        freq_x_bx=2760.0*11246/1000
+        pt=events[*h.collection_name.split("/")][h.var_name]
+        for thr,pt_bin_center in zip(hist_obj.axes[0].edges, hist_obj.axes[0].centers):
+            hist_obj.fill(pt_bin_center, weight=ak.sum(pt>=thr))
+
+        hist_obj.axes[0].label="Online pT cut"
+        h.name=h.name.rsplit("/",2)[0]+"/rate_vs_ptcut"
+        hist_obj=hist_obj*freq_x_bx/n_ev
 
 
     return hist_obj
