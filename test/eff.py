@@ -7,7 +7,7 @@ sys.path.append("..")
 import xgboost as xgb
 
 import python.sample
-from cfg.BDT import define
+from cfg.BDT_SigPtToPuPt import define
 
 BarrelEta = 1.479
 model=xgb.Booster()
