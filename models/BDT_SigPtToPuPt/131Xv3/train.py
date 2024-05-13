@@ -33,6 +33,18 @@ dtest = xgb.DMatrix(X_test, label=y_test, weight=w_test)
 
 #model=xgb.Booster()
 #model.load_model("BDT_SigPtToPuPt_131Xv3.json")
+
+#%%#!Closure
+bins=np.linspace(0,100,30)
+plt.hist(pt[y==0],bins=bins,label="PU",histtype="step")
+plt.hist(pt[y==1],bins=bins,label="signal-weighted",histtype="step",weights=weight[y==1])
+plt.hist(pt[y==1],bins=bins,label="Signal",histtype="step")
+plt.yscale("log")
+plt.legend()
+plt.grid()
+
+
+
 # %%
 #!-----------------Train a BDT-----------------!#
 
@@ -248,3 +260,7 @@ hep.cms.lumitext("Single Cluster-Track couple")
 
 plt.savefig("fig/ROCperCluster_131Xv3.pdf")
 # %%
+#! RANKING
+fig,ax=plt.subplots()
+xgb.plot_importance(model,importance_type="gain",values_format="{v:.0f}",xlim=(0,62000),ax=ax)
+fig.savefig("fig/ImportanceGain_131Xv3.pdf",bbox_inches = "tight")

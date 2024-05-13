@@ -21,18 +21,10 @@ ev_id=df["ev_id"]
 pt = df["CryClu_pt"].to_numpy()
 pt_weight = df["pt_weight"].to_numpy()
 weight = pt_weight
-weight[y == 0] = weight[y == 0] * np.sum(pt_weight[y == 1]) / np.sum(pt_weight[y == 0])
-#%%#!Closure
-bins=np.linspace(0,100,30)
-plt.hist(pt[y==0],bins=bins,label="PU",histtype="step")
-plt.hist(pt[y==0],bins=bins,label="PU-weighted",histtype="step",weights=weight[y==0])
-plt.hist(pt[y==1],bins=bins,label="Signal",histtype="step")
-plt.yscale("log")
-plt.legend()
-plt.grid()
-
 
 #%%
+weight[y == 0] = weight[y == 0] * np.sum(pt_weight[y == 1]) / np.sum(pt_weight[y == 0])
+
 df = df.drop(columns=["label", "Tk_isReal", "ev_id", "pt_weight","CryClu_pt","CryClu_idx"])
 
 X_train, X_test, y_train, y_test, w_train, w_test,pt_train,pt_test = train_test_split(
@@ -42,7 +34,7 @@ dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
 dtest = xgb.DMatrix(X_test, label=y_test, weight=w_test)
 
 #model=xgb.Booster()
-#model.load_model("BDT_PuPtToSigPt_131Xv3.json")
+#model.load_model("BDT_noWeight_131Xv3.json")
 # %%
 #!-----------------Train a BDT-----------------!#
 
@@ -197,7 +189,7 @@ hep.cms.lumitext("PU200")
 plt.savefig("fig/Efficiency_131Xv3.pdf")
 
 #%%
-model.save_model("BDT_PuPtToSigPt_131Xv3.json")
+model.save_model("BDT_noWeight_131Xv3.json")
 
 
 
@@ -258,6 +250,7 @@ hep.cms.lumitext("Single Cluster-Track couple")
 
 plt.savefig("fig/ROCperCluster_131Xv3.pdf")
 # %%
+#!RANKING
 fig,ax=plt.subplots()
-xgb.plot_importance(model,importance_type="gain",values_format="{v:.0f}",xlim=(0,5000),ax=ax)
+xgb.plot_importance(model,importance_type="gain",values_format="{v:.0f}",xlim=(0,6000),ax=ax)
 fig.savefig("fig/ImportanceGain_131Xv3.pdf",bbox_inches = "tight")

@@ -8,7 +8,7 @@ import numpy as np
 from scipy.interpolate import PchipInterpolator
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-sys.path.append("../..")
+sys.path.append("../../..")
 
 from cfg.functions.matching import match_to_gen, select_match
 from python.sample import Sample
