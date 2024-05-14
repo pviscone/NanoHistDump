@@ -37,16 +37,25 @@ def split_and_flat(events,collection_name,var_name):
 
 def fill(h,events,fill_mode,weight=None,**kwargs):
     hist_obj=h.hist_obj
+
+
+    add_data=[]
+    if "additional_axes" in h.kwargs:
+        for idx, ax in enumerate(h.kwargs["additional_axes"]):
+            data=split_and_flat(events,ax[0],ax[1])
+            add_data.append(data)
+            hist_obj.axes[idx+1].label=ax[0]+"/"+ax[1]
+
     if fill_mode=="normal":
         data=split_and_flat(events,h.collection_name,h.var_name)
-        hist_obj.fill(data,weight=weight)
+        hist_obj.fill(data,*add_data,weight=weight)
 
     elif fill_mode=="rate_vs_ptcut":
         n_ev=len(events)
         freq_x_bx=2760.0*11246/1000
         pt=events[*h.collection_name.split("/")][h.var_name]
         for thr,pt_bin_center in zip(hist_obj.axes[0].edges, hist_obj.axes[0].centers):
-            hist_obj.fill(pt_bin_center, weight=ak.sum(pt>=thr))
+            hist_obj.fill(pt_bin_center, *add_data, weight=ak.sum(pt>=thr))
 
         hist_obj.axes[0].label="Online pT cut"
         h.name=h.name.rsplit("/",2)[0]+"/rate_vs_ptcut"

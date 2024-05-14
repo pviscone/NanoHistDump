@@ -127,7 +127,13 @@ class Hist:
         else:
             axis = hist.axis.Regular(self.bins, *self.hist_range, name=self.var_name)
 
-        self.hist_obj = hist.Hist(axis)
+        axes=[axis]
+        if "additional_axes" in self.kwargs:
+            add_axes=[hist.axis.Variable(i) for i in self.bins[1:]]
+            axes.extend(add_axes)
+
+
+        self.hist_obj = hist.Hist(*axes)
         hist_obj=fill(self,events,fill_mode=self.fill_mode,weight=self.weight,**self.kwargs)
 
         if self.delete_on_add_hist:
@@ -160,6 +166,11 @@ class Hist:
             axis1 = hist.axis.Regular(self.bins[0], *self.hist_range[0], name=self.collection_name + "/" + var1)
             axis2 = hist.axis.Regular(self.bins[1], *self.hist_range[1], name=self.collection_name2 + "/" + var2)
 
+        axes=[axis1,axis2]
+        if "additional_axes" in self.kwargs:
+            add_axes=[hist.axis.Variable(i) for i in self.bins[2:]]
+            axes.extend(add_axes)
 
-        self.hist_obj = hist.Hist(axis1, axis2)
+
+        self.hist_obj = hist.Hist(*axes)
         return fill2D(self,events,fill_mode=self.fill_mode,weight=self.weight,**self.kwargs)

@@ -263,6 +263,7 @@ class Sample:
                         self.errors[f"{h.collection_name}"]=error
                         pprint(error)
             except Exception as error:
+
                 if h.dim == 1:
                     pprint(f"\nError creating hist {h.collection_name}/{h.var_name}\n")
                     self.errors[f"{h.collection_name}/{h.var_name}"]=error
@@ -270,6 +271,9 @@ class Sample:
                     pprint(f"\nError creating hist {h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}\n")
                     self.errors[f"{h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}"]=error
                 print(error)
+                #import traceback
+                #print(traceback.format_exc())
+
 
 
     def hist_report(self):
