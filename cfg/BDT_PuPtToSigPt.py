@@ -92,12 +92,12 @@ def define(events, sample_name):
         events["TkCryCluGenMatchFake"]=events["TkCryCluGenMatch"][events.TkCryCluGenMatch.Tk.isReal!=1]
     return events
 
-pt_bins = np.linspace(1,101,50)
+pt_bins = np.linspace(0,120,121)
 eta_bins = np.linspace(-2,2,50)
-bdt_bins = np.array([0,0.2, 0.4,0.6,0.8,1.01])
+bdt_bins = np.linspace(0,1.01,102)
 
 hists = [#signal
-        Hist("TkCryCluGenMatch","BDTscore","TkCryCluGenMatch/CryCluGenMatch/GenEle","pt",bins=[bdt_bins,pt_bins]),
+        Hist("TkCryCluGenMatch","BDTscore","TkCryCluGenMatch/CryCluGenMatch/GenEle","pt",bins=[bdt_bins,pt_bins,pt_bins],additional_axes=[["TkCryCluGenMatch/CryCluGenMatch/CryClu","pt"]]),
         Hist("TkCryCluGenMatch","BDTscore","TkCryCluGenMatch/CryCluGenMatch/GenEle","eta",bins=[bdt_bins,eta_bins]),
 
         Hist("TkCryCluGenMatch/CryCluGenMatch/GenEle","pt",bins=pt_bins),

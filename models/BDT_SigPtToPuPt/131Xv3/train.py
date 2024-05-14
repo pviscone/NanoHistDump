@@ -204,7 +204,7 @@ model.save_model("BDT_SigPtToPuPt_131Xv3.json")
 
 
 
-#%% #!Per cluster roc
+#%% #%% #!Per cluster roc
 df = pd.read_parquet("131Xv3.parquet")
 mask=np.bitwise_or(
     np.bitwise_and(df["label"]==1,df["Tk_isReal"]==1),
@@ -227,8 +227,12 @@ new_df=df.groupby(["ev_id","CryClu_idx"]).max("score")
 
 #!-----------------Plot ROC Curve-----------------!#
 from sklearn.metrics import roc_curve
-pt_bin=[0,5,10,15,20,50,999]
+from matplotlib.lines import Line2D
 
+pt_bin=[0,5,10,20,30,50,999]
+markers=["o","s","v","^","*","X"]
+custom_lines=[]
+lines=[]
 for iteration,(low,high) in enumerate(zip(pt_bin[:-1],pt_bin[1:])):
     mask=(new_df["CryClu_pt"]>low)&(new_df["CryClu_pt"]<=high)
 
@@ -240,7 +244,11 @@ for iteration,(low,high) in enumerate(zip(pt_bin[:-1],pt_bin[1:])):
         idx = (np.abs(array - value)).argmin()
         return idx, array[idx]
 
-    plt.plot(fpr, tpr,label=f"{low}-{high} GeV",linewidth=2)
+    print(f"{f'tpr 97% ':<8}{f'{low:.1f}-{high:.1f}':^10} GeV: thr={thresholds[find_nearest(tpr,0.97)[0]]:.2f} fpr={fpr[find_nearest(tpr,0.97)[0]]:.2f}")
+    line,=plt.plot(fpr, tpr,label=f"{low}-{high} GeV",linewidth=2,alpha=0.85)
+    lines.append(line)
+    custom_lines.append(Line2D([0], [0], color=plt.gca().lines[-1].get_color(), lw=2,linestyle="-",label=f"{low}-{high} GeV",marker=markers[iteration],markersize=10))
+
     colors=["red","blue","green","orange","purple"]
     for i,cut in enumerate([0.2,0.4,0.6,0.8,0.9]):
         idx, val = find_nearest(thresholds, cut)
@@ -248,10 +256,13 @@ for iteration,(low,high) in enumerate(zip(pt_bin[:-1],pt_bin[1:])):
             label=f"BDT>{cut}"
         else:
             label=None
-        plt.plot(fpr[idx], tpr[idx], "o",label=label,color=colors[i],markersize=8)
+        plt.plot(fpr[idx], tpr[idx], markers[iteration],label=label,color=colors[i],markersize=10,alpha=0.85)
         #plt.text(fpr[idx]*1, tpr[idx]*0.98, f"{cut:.2f}", fontsize=12)
-
-plt.legend()
+line_to_custom_line = {line: custom_line for line, custom_line in zip(lines, custom_lines)}
+handles, labels = plt.gca().get_legend_handles_labels()
+handles = [line_to_custom_line.get(handle, handle) for handle in handles]
+plt.legend(handles, labels)
+#plt.legend()
 plt.xlabel("False Positive Rate")
 plt.ylabel("True Positive Rate")
 plt.grid()
@@ -264,3 +275,9 @@ plt.savefig("fig/ROCperCluster_131Xv3.pdf")
 fig,ax=plt.subplots()
 xgb.plot_importance(model,importance_type="gain",values_format="{v:.0f}",xlim=(0,62000),ax=ax)
 fig.savefig("fig/ImportanceGain_131Xv3.pdf",bbox_inches = "tight")
+
+
+
+#%%
+
+
