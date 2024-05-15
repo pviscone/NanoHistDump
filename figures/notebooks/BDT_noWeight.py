@@ -70,7 +70,7 @@ score_cuts=h2rate.axes[1].edges[:-1]
 for cut in selected_cuts:
     rate.add(h2rate[:,hist.loc(cut)],label=f"BDT score>{cut:.2f}")
 
-rate.add(minbias["TkEle/rate_vs_ptcut;1"].to_hist(),label="TkEle")
+rate.add(minbias["TkElePtMax/rate_vs_ptcut;1"].to_hist(),label="TkEle")
 
 if save:
     rate.save(folder+"rate.pdf")
@@ -139,7 +139,7 @@ for idx,(low,high) in enumerate(zip(pt_edges[:-1],pt_edges[1:])):
 rate.add(h2rate[:,0],label="BDT>0")
 rate.add(h,label="97% sig eff")
 
-rate.add(minbias["TkEle/rate_vs_ptcut;1"].to_hist(),label="TkEle")
+rate.add(minbias["TkElePtMax/rate_vs_ptcut;1"].to_hist(),label="TkEle")
 for pt in pt_edges:
     plt.axvline(pt,linestyle="--",color="red",linewidth=1)
 

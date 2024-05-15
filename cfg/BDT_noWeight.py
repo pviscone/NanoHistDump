@@ -31,7 +31,12 @@ features=["CryCluGenMatch/"+feat if feat.startswith("CryClu/") else feat for fea
 
 
 def define(events, sample_name):
-
+    #!-------------------TkEle -------------------!#
+    events["TkEle"]=events.TkEle[np.abs(events.TkEle.eta)<BarrelEta]
+    events["TkEle","hwQual"] = ak.values_astype(events["TkEle"].hwQual, np.int32)
+    mask_tight_ele = 0b0010
+    events["TkEle","IDTightEle"] = np.bitwise_and(events["TkEle"].hwQual, mask_tight_ele) > 0
+    events["TkEle"]=events.TkEle[events.TkEle.IDTightEle]
     events["CryClu","showerShape"] = events.CryClu.e2x5/events.CryClu.e5x5
     if sample_name == "MinBias":
         #events = events[:40000]
@@ -49,6 +54,11 @@ def define(events, sample_name):
 
         maxbdt_mask=ak.argmax(events["TkCryCluMatch"].BDTscore,axis=2,keepdims=True)
         events["TkCryCluMatch"]=ak.flatten(events["TkCryCluMatch"][maxbdt_mask],axis=2)
+
+        #!-------------------TkEle -------------------!#
+        tkele_mask=ak.argmax(events.TkEle.pt,axis=1,keepdims=True)
+        events["TkElePtMax"] =events.TkEle[tkele_mask]
+
     else:
         #!-------------------GEN Selection-------------------!#
         events["GenEle"] = events.GenEle[np.abs(events.GenEle.eta) < BarrelEta]
@@ -79,17 +89,16 @@ def define(events, sample_name):
         events["TkCryCluGenMatch"]=ak.flatten(events["TkCryCluGenMatch"][maxbdt_mask],axis=2)
 
 
-    #!-------------------TkEle-Gen Matching-------------------!#
-    events["TkEleGenMatch"] = match_to_gen(
-        events.GenEle, events.TkEle, etaphi_vars=(("caloeta", "calophi"), ("eta", "phi")),nested=True
-    )
-    mindpt_mask=ak.argmin(np.abs(events["TkEleGenMatch"].dPt),axis=2,keepdims=True)
-    events["TkEleGenMatch"] = ak.flatten(events["TkEleGenMatch"][mindpt_mask],axis=2)
+        #!-------------------TkEle-Gen Matching-------------------!#
+        events["TkEleGenMatch"] = match_to_gen(
+            events.GenEle, events.TkEle, etaphi_vars=(("caloeta", "calophi"), ("caloEta", "caloPhi")),nested=True
+        )
+        mindpt_mask=ak.argmin(np.abs(events["TkEleGenMatch"].dPt),axis=2,keepdims=True)
+        events["TkEleGenMatch"] = ak.flatten(events["TkEleGenMatch"][mindpt_mask],axis=2)
 
-
-    if sample_name != "MinBias":
         events["TkCryCluGenMatchReal"]=events["TkCryCluGenMatch"][events.TkCryCluGenMatch.Tk.isReal==1]
         events["TkCryCluGenMatchFake"]=events["TkCryCluGenMatch"][events.TkCryCluGenMatch.Tk.isReal!=1]
+
     return events
 
 pt_bins = np.linspace(0,120,121)
@@ -118,7 +127,7 @@ hists = [#signal
         Hist("TkCryCluMatch","BDTscore",bins=bdt_bins),
 
         #TkEle
-        Hist("TkEle","pt",bins=pt_bins,fill_mode="rate_vs_ptcut"),
+        Hist("TkElePtMax","pt",bins=pt_bins,fill_mode="rate_vs_ptcut"),
 
 
 

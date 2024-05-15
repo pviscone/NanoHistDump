@@ -53,7 +53,7 @@ def fill(h,events,fill_mode,weight=None,**kwargs):
     elif fill_mode=="rate_vs_ptcut":
         n_ev=len(events)
         freq_x_bx=2760.0*11246/1000
-        pt=events[*h.collection_name.split("/")][h.var_name]
+        pt=split_and_flat(events,h.collection_name,h.var_name)
         for thr,pt_bin_center in zip(hist_obj.axes[0].edges, hist_obj.axes[0].centers):
             hist_obj.fill(pt_bin_center, *add_data, weight=ak.sum(pt>=thr))
 
