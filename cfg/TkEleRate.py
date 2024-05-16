@@ -16,8 +16,7 @@ def define(events, sample_name):
         mask_tight_ele = 0b0010
         events["TkEle","IDTightEle"] = np.bitwise_and(events["TkEle"].hwQual, mask_tight_ele) > 0
         events["TkEle"]=events.TkEle[events.TkEle.IDTightEle]
-        tkele_mask=ak.argmax(events.TkEle.pt,axis=1,keepdims=True)
-        events["TkElePtMax"] =events.TkEle[tkele_mask]
+
 
     return events
 
@@ -28,7 +27,7 @@ bdt_bins = np.linspace(0,1.01,102)
 
 hists = [
         #TkEle
-        Hist("TkElePtMax","pt",bins=pt_bins,fill_mode="rate_vs_ptcut"),
+        Hist("TkEle","pt",bins=pt_bins,fill_mode="rate_vs_ptcut"),
 
 
 

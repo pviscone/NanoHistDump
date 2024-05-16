@@ -39,23 +39,37 @@ def fill(h,events,fill_mode,weight=None,**kwargs):
     hist_obj=h.hist_obj
 
 
-    add_data=[]
-    if "additional_axes" in h.kwargs:
-        for idx, ax in enumerate(h.kwargs["additional_axes"]):
-            data=split_and_flat(events,ax[0],ax[1])
-            add_data.append(data)
-            hist_obj.axes[idx+1].label=ax[0]+"/"+ax[1]
+
+    def add_axes(mask=None):
+        add_data=[]
+        if "additional_axes" in h.kwargs:
+            for idx, ax in enumerate(h.kwargs["additional_axes"]):
+                data=events[*ax[0].split("/")][ax[1]]
+                if mask is not None:
+                    if isinstance(mask, list):
+                        for m in mask:
+                            data=data[m]
+                    else:
+                        data=data[mask]
+                data=ak.flatten(ak.drop_none(data))
+                add_data.append(data)
+                hist_obj.axes[idx+1].label=ax[0]+"/"+ax[1]
+        return add_data
 
     if fill_mode=="normal":
+        add_data=add_axes()
         data=split_and_flat(events,h.collection_name,h.var_name)
         hist_obj.fill(data,*add_data,weight=weight)
 
     elif fill_mode=="rate_vs_ptcut":
         n_ev=len(events)
         freq_x_bx=2760.0*11246/1000
-        pt=split_and_flat(events,h.collection_name,h.var_name)
+        pt=events[*h.collection_name.split("/")][h.var_name]
+        maxpt_mask=ak.argmax(pt,axis=1,keepdims=True)
+        maxpt=ak.flatten(ak.drop_none(pt[maxpt_mask]))
+        add_data=add_axes(mask=maxpt_mask)
         for thr,pt_bin_center in zip(hist_obj.axes[0].edges, hist_obj.axes[0].centers):
-            hist_obj.fill(pt_bin_center, *add_data, weight=ak.sum(pt>=thr))
+            hist_obj.fill(pt_bin_center, *add_data, weight=ak.sum(maxpt>=thr))
 
         hist_obj.axes[0].label="Online pT cut"
         h.name=h.name.rsplit("/",2)[0]+"/rate_vs_ptcut"

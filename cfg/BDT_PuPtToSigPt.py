@@ -55,8 +55,6 @@ def define(events, sample_name):
         maxbdt_mask=ak.argmax(events["TkCryCluMatch"].BDTscore,axis=2,keepdims=True)
         events["TkCryCluMatch"]=ak.flatten(events["TkCryCluMatch"][maxbdt_mask],axis=2)
 
-        tkele_mask=ak.argmax(events.TkEle.pt,axis=1,keepdims=True)
-        events["TkElePtMax"] =events.TkEle[tkele_mask]
     else:
         #!-------------------GEN Selection-------------------!#
         events["GenEle"] = events.GenEle[np.abs(events.GenEle.eta) < BarrelEta]
@@ -125,7 +123,7 @@ hists = [#signal
         Hist("TkCryCluMatch","BDTscore",bins=bdt_bins),
 
         #TkEle
-        Hist("TkElePtMax","pt",bins=pt_bins,fill_mode="rate_vs_ptcut"),
+        Hist("TkEle","pt",bins=pt_bins,fill_mode="rate_vs_ptcut"),
 
 
 
