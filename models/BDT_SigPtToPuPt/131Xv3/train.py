@@ -86,7 +86,7 @@ plt.savefig("fig/Loss_131Xv3.pdf")
 # %%
 #!-----------------Plot BDT Score-----------------!#
 func = lambda x: x
-bins = np.linspace(0, 1, 10)
+bins = np.linspace(0, 1, 20)
 
 train_hist_signal = np.histogram(
     func(preds_train[y_train == 1]), density=True, bins=bins, #weights=dtrain.get_weight()[y_train == 1]
@@ -99,7 +99,7 @@ centers = (train_hist_signal[1][1:] + train_hist_signal[1][:-1]) / 2
 
 fig, ax1 = plt.subplots()
 #plt.subplots(2, 1, sharex=True, gridspec_kw={"height_ratios": [3, 1]})
-
+ax1.set_yscale("log")
 ax1.hist(
     func(preds_test[y_test == 1]),
     hatch="/",
@@ -273,8 +273,8 @@ plt.savefig("fig/ROCperCluster_131Xv3.pdf")
 # %%
 #! RANKING
 fig,ax=plt.subplots()
-xgb.plot_importance(model,importance_type="gain",values_format="{v:.0f}",xlim=(0,62000),ax=ax)
-fig.savefig("fig/ImportanceGain_131Xv3.pdf",bbox_inches = "tight")
+xgb.plot_importance(model,importance_type="weight",values_format="{v:.0f}",xlim=(0,200),ax=ax)
+#fig.savefig("fig/ImportanceGain_131Xv3.pdf",bbox_inches = "tight")
 
 
 

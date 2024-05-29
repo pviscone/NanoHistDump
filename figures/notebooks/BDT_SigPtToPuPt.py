@@ -85,28 +85,52 @@ tpr 97% 20.0-30.0  GeV: thr=0.52 fpr=0.34
 tpr 97% 30.0-50.0  GeV: thr=0.51 fpr=0.51
 tpr 97% 50.0-999.0 GeV: thr=0.50 fpr=0.64
 
+
+tpr 99%  0.0-5.0   GeV: thr=0.23 fpr=0.20
+tpr 99%  5.0-10.0  GeV: thr=0.18 fpr=0.36
+tpr 99% 10.0-20.0  GeV: thr=0.23 fpr=0.38
+tpr 99% 20.0-30.0  GeV: thr=0.23 fpr=0.47
+tpr 99% 30.0-50.0  GeV: thr=0.32 fpr=0.56
+tpr 99% 50.0-999.0 GeV: thr=0.43 fpr=0.67
+
+
+tpr 90%  0.0-5.0   GeV: thr=0.77 fpr=0.07
+tpr 90%  5.0-10.0  GeV: thr=0.82 fpr=0.12
+tpr 90% 10.0-20.0  GeV: thr=0.81 fpr=0.15
+tpr 90% 20.0-30.0  GeV: thr=0.77 fpr=0.22
+tpr 90% 30.0-50.0  GeV: thr=0.74 fpr=0.37
+tpr 90% 50.0-999.0 GeV: thr=0.73 fpr=0.61
 """
 pt_edges=[0,5,10,20,30,50,999]
-thr=[0.54,0.52,0.52,0.52,0.51,0.50]
+thr97=[0.54,0.52,0.52,0.52,0.51,0.50]
+thr99=[0.23,0.18,0.23,0.23,0.32,0.43]
+thr90=[0.77,0.82,0.81,0.77,0.74,0.73]
+eff=[0.9,0.97,0.99]
 rebin=hist.rebin(2)
 h2pt=signal["TkCryCluGenMatch-GenEle/BDTscore_vs_pt;1"].to_hist()
 genpt=signal["GenEle/pt;1"].to_hist()[rebin]
 
-hWP=0
+
 pteff = TEfficiency(name="pt_eff", linewidth=3, xlabel="Gen $p_{T}$ [GeV]",xlim=(-5,105))
-plt.text(-15,-0.15,"score cut:",fontsize=11,color="red")
-for idx,(low,high) in enumerate(zip(pt_edges[:-1],pt_edges[1:])):
-    hWP=hWP+h2pt.integrate(2,hist.loc(low),hist.loc(high)).integrate(0,hist.loc(thr[idx]),2j)[rebin]
-    plt.axvline(low,linestyle="--",color="red",linewidth=1)
-    plt.text(low,-0.15,f"{thr[idx]:.2f}",fontsize=11,color="red")
-
-plt.text(low+8,-0.15,f"on online pt bins",fontsize=11,color="red")
-
 
 pteff.add(h2pt.integrate(2).integrate(0)[rebin],genpt,label="BDT>0")
-pteff.add((h2pt.integrate(2).integrate(0)*0.97)[rebin],genpt,label="0.97*BDT>0")
-pteff.add(hWP,genpt,label="97% sig eff",linewidth=4)
-pteff.add(signal["TkEleGenMatch/GenEle/pt;1"].to_hist()[rebin],genpt,label="TkEle",linestyle="--",linewidth=4,color="black")
+for iteration,thr in enumerate([thr90,thr97,thr99]):
+    hWP=0
+    for idx,(low,high) in enumerate(zip(pt_edges[:-1],pt_edges[1:])):
+        hWP=hWP+h2pt.integrate(2,hist.loc(low),hist.loc(high)).integrate(0,hist.loc(thr[idx]),2j)[rebin]
+        plt.axvline(low,linestyle="--",color="red",linewidth=1)
+        if iteration==0:
+            plt.text(low,-0.15,f"{thr97[idx]:.2f}",fontsize=11,color="red")
+
+
+
+    pteff.add(hWP,genpt,label=f"{eff[iteration]*100:.0f}% sig eff",linewidth=4)
+    #pteff.add((h2pt.integrate(2).integrate(0)*eff[iteration])[rebin],genpt,label=f"{eff[iteration]:.2f}*BDT>0",color=plt.gca().lines[-1].get_color(),linestyle="--",alpha=0.6)
+
+plt.text(-15,-0.15,"score cut (97%):",fontsize=10,color="red")
+plt.text(low+8,-0.15,f"on online pt bins",fontsize=11,color="red")
+
+pteff.add(signal["TkEleGenMatch/GenEle/pt;1"].to_hist()[rebin],genpt,label="TkEle",linewidth=4)
 
 
 if save:
@@ -124,20 +148,24 @@ h2rate=minbias["TkCryCluMatch/rate_pt_vs_score;1"].to_hist()
 
 score_cuts=h2rate.axes[1].edges[:-1]
 
-plt.text(-6,4.8,"score cut:",fontsize=11,color="red")
+plt.text(-6.5,4.8,"score cut (97%):",fontsize=8,color="red")
 
 edges=h2rate.axes[0].edges
-h=0
-for idx,(low,high) in enumerate(zip(pt_edges[:-1],pt_edges[1:])):
-
-    bitmask=np.zeros(len(edges[:-1]))
-    bitmask[np.bitwise_and(edges[:-1]>=low, edges[:-1]<high)]=1
-
-    h=h+h2rate[:,hist.loc(thr[idx])]*bitmask
-    plt.text(low,4.8,f"{thr[idx]:.2f}",fontsize=11,color="red")
-
 rate.add(h2rate[:,0],label="BDT>0")
-rate.add(h,label="97% sig eff")
+for iteration,thr in enumerate([thr90,thr97,thr99]):
+    h=0
+    for idx,(low,high) in enumerate(zip(pt_edges[:-1],pt_edges[1:])):
+
+        bitmask=np.zeros(len(edges[:-1]))
+        bitmask[np.bitwise_and(edges[:-1]>=low, edges[:-1]<high)]=1
+
+        h=h+h2rate[:,hist.loc(thr[idx])]*bitmask
+        if iteration==0:
+            plt.text(low,4.8,f"{thr97[idx]:.2f}",fontsize=11,color="red")
+
+    rate.add(h,label=f"{eff[iteration]*100:.0f}% sig eff")
+
+
 
 rate.add(minbias["TkEle/rate_vs_ptcut;1"].to_hist(),label="TkEle")
 for pt in pt_edges:

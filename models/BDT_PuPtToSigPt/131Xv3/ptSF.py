@@ -61,7 +61,7 @@ ax1.set_yscale("log")
 ax1.set_ylabel("Density")
 
 ratio = ptSignal/ptPU
-smoothed = np.exp(lowess(exog=centers, endog=np.log(1e-18 + ratio), frac=0.175, it=50)[:, 1])
+smoothed = np.exp(lowess(exog=centers, endog=np.log(1e-18 + ratio), frac=0.15, it=20)[:, 1])
 
 interp_func = PchipInterpolator(centers, np.log(smoothed))
 

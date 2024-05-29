@@ -76,7 +76,7 @@ plt.savefig("fig/Loss_131Xv3.pdf")
 # %%
 #!-----------------Plot BDT Score-----------------!#
 func = lambda x: x
-bins = np.linspace(0, 1, 50)
+bins = np.linspace(0, 1, 20)
 
 train_hist_signal = np.histogram(
     func(preds_train[y_train == 1]), density=True, bins=bins, #weights=dtrain.get_weight()[y_train == 1]
@@ -89,7 +89,7 @@ centers = (train_hist_signal[1][1:] + train_hist_signal[1][:-1]) / 2
 
 fig, ax1 = plt.subplots()
 #plt.subplots(2, 1, sharex=True, gridspec_kw={"height_ratios": [3, 1]})
-
+ax1.set_yscale("log")
 ax1.hist(
     func(preds_test[y_test == 1]),
     hatch="/",

@@ -43,24 +43,29 @@ cc_gen = select_match(cc_gen, cc_gen.GenEle.idx)
 
 centers = (bins[1:] + bins[:-1]) / 2
 # %%
+
+from hepstats.modeling import bayesian_blocks
+
 fig, (ax1, ax2) = plt.subplots(2, 1)
+ptPU_array = ak.flatten(ak.drop_none(pu.CryClu.pt))
+bins=bayesian_blocks(ptPU_array)
+centers = (bins[1:] + bins[:-1]) / 2
+ptPU = ax1.hist(ptPU_array, bins=bins, density=True, histtype="step", label="PU", linewidth=2)[0]
 
 ptSignal_array = ak.flatten(ak.drop_none(cc_gen.CryClu.pt))
 ptSignal = ax1.hist(ptSignal_array, bins=bins, density=True, histtype="step", label="signal", linewidth=2)[0]
 
-ptPU_array = ak.flatten(ak.drop_none(pu.CryClu.pt))
-ptPU = ax1.hist(ptPU_array, bins=bins, density=True, histtype="step", label="PU", linewidth=2)[0]
+
 
 ax1.legend()
 ax1.grid()
 ax1.set_yscale("log")
 ax1.set_ylabel("Density")
 
-ratio = ptPU / np.mean(ptSignal[1:-1])
+ratio = ptPU/ptSignal
 smoothed = np.exp(lowess(exog=centers, endog=np.log(1e-18 + ratio), frac=0.15, it=20)[:, 1])
 
 interp_func = PchipInterpolator(centers, np.log(smoothed))
-
 
 def interp(func, x):
     res = np.zeros_like(x)
@@ -68,9 +73,11 @@ def interp(func, x):
     res[x < 100] = func(x[x < 100])
     return res
 
-
+ax1.set_xlim(-10,130)
+ax2.set_xlim(-10,130)
 x = np.linspace(0, 120, 500)
-ax2.step(centers + (centers[1] - centers[0]) / 2, ratio, color="black", label="PU/Signal", linewidth=2)
+plt.stairs(ratio,edges=bins, color="black", label="PU/Signal", linewidth=2)
+
 
 ax2.plot(centers, smoothed, ".", color="red", label="smoothed", markersize=10)
 ax2.plot(x, np.exp(interp(interp_func, x)), color="dodgerblue", label="interpolated", linewidth=2)
