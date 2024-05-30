@@ -2,7 +2,7 @@
 import importlib
 import sys
 
-sys.path.append("..")
+sys.path.append("../..")
 
 import sys
 
@@ -35,9 +35,9 @@ importlib.reload(cfg.functions.matching )
 elliptic_match, match_to_gen=cfg.functions.matching.elliptic_match, cfg.functions.matching.match_to_gen
 scheme = {"CaloEGammaCrystalClustersGCT": "CryClu", "GenEl": "GenEle", "DecTkBarrel": "Tk", "TkEleL2": "TkEle","CaloEGammaCrystalClustersRCT": "CryCluRCT"}
 
-noPUname="/eos/cms/store/cmst3/group/l1tr/pviscone/ntuples/DoubleElectron_FlatPt-1To100_PU0/FP"
-signal_name="/eos/cms/store/cmst3/group/l1tr/pviscone/ntuplesOLD/DoubleElectron_FlatPt-1To100"
-minbias_name="/eos/cms/store/cmst3/group/l1tr/pviscone/ntuplesOLD/SingleNeutrino_PU200"
+noPUname="/afs/cern.ch/work/p/pviscone/NanoHistDump/root_files/131Xv3/DoubleElectrons_PU0"
+signal_name="/afs/cern.ch/work/p/pviscone/NanoHistDump/root_files/131Xv3/DoubleElectrons_PU200"
+minbias_name="/afs/cern.ch/work/p/pviscone/NanoHistDump/root_files/131Xv3/MinBias"
 
 #!#####################DEFINE##############################
 BarrelEta = 1.479
@@ -131,11 +131,11 @@ fig.savefig("MatchFig/etaPhi.pdf")
 pt_bins=[0,10,20,30,50,100]
 eta_bins=[0,0.4,0.9,1.4]
 #pt_bins=[0,120]
-deta_ellipse=0.0125
+deta_ellipse=0.03
 dphi_ellipse=0.3
 
-deta_ellipse2=0.03
-dphi_ellipse2=0.08
+#deta_ellipse2=0.03
+#dphi_ellipse2=0.08
 for pt_bins_list in [[0,120],pt_bins]:
     for pt_low,pt_high in zip(pt_bins_list[:-1],pt_bins_list[1:]):
 #for eta_bins_list in [[0,BarrelEta],eta_bins]:
@@ -158,26 +158,26 @@ for pt_bins_list in [[0,120],pt_bins]:
                                 edgecolor="r", fc="None", lw=2)
         ax.add_patch(ellipse)
 
-        ellipse2=Ellipse(xy=(0, 0), width=2*dphi_ellipse2, height=2*deta_ellipse2,edgecolor="r", fc="None", lw=2)
-        ax.add_patch(ellipse2)
+        #ellipse2=Ellipse(xy=(0, 0), width=2*dphi_ellipse2, height=2*deta_ellipse2,edgecolor="r", fc="None", lw=2)
+        #ax.add_patch(ellipse2)
 
 
         entries=np.sum(mask)
         entries_per_pt=entries/(pt_high-pt_low)
         eta_median=np.median(deta)
         phi_median=np.median(dphi)
-        inside_mask1=(deta/deta_ellipse)**2+(dphi/dphi_ellipse)**2<1
-        inside_mask2=(deta/deta_ellipse2)**2+(dphi/dphi_ellipse2)**2<1
-        inside_mask=np.bitwise_or(inside_mask1,inside_mask2)
+        inside_mask=(deta/deta_ellipse)**2+(dphi/dphi_ellipse)**2<1
+        #inside_mask2=(deta/deta_ellipse2)**2+(dphi/dphi_ellipse2)**2<1
+        #inside_mask=np.bitwise_or(inside_mask1,inside_mask2)
         inside_entries=np.sum(inside_mask)
         inside_ratio=inside_entries/entries
 
 
 
         col_labels = [""]
-        row_labels = ["Ellipse1","Ellipse2","Entries","Entries inside","Entries/pT_range", "Entries inside/pT_range","Ratio inside/total","Median dEta","Median dPhi"]
+        row_labels = ["Ellipse1","Entries","Entries inside","Entries/pT_range", "Entries inside/pT_range","Ratio inside/total","Median dEta","Median dPhi"]
         table_vals = [[f"dEta: {deta_ellipse:.2f} dPhi: {dphi_ellipse:.2f}"],
-                    [f"dEta: {deta_ellipse2:.2f} dPhi: {dphi_ellipse2:.2f}"],
+                    #[f"dEta: {deta_ellipse2:.2f} dPhi: {dphi_ellipse2:.2f}"],
                     [entries],
                     [inside_entries],
                     [entries_per_pt],
@@ -198,12 +198,18 @@ for pt_bins_list in [[0,120],pt_bins]:
 #%%
 #!-------------------Efficiencies-------------------!#
 
-signal_ellipse=define(signal_original,ellipse=[[0.0125,0.3],[0.03,0.8]],sample_name="signal")
+signal_ellipse=define(signal_original,ellipse=[[0.03,0.3]],sample_name="signal")
 signal_circle=define(signal_original,ellipse=0.2,sample_name="signal")
+
+noPU_ellipse=define(noPU_original,ellipse=[[0.03,0.3]],sample_name="noPU")
+noPU_circle=define(noPU_original,ellipse=0.2,sample_name="noPU")
+
 #%%
 #!Multiplicity
-plt.hist(ak.flatten(ak.num(signal_ellipse.TkCryCluGenMatchAll.Tk.pt,axis=2)),bins=np.linspace(0,10,11),density=True,label="Double Elliptic Match",histtype="step",linewidth=2)
-plt.hist(ak.flatten(ak.num(signal_circle.TkCryCluGenMatchAll.Tk.pt,axis=2)),bins=np.linspace(0,10,11),density=True,label=r"$\Delta R 0.2$ Match",histtype="step",linewidth=2)
+plt.hist(ak.flatten(ak.num(signal_ellipse.TkCryCluGenMatchAll.Tk.pt,axis=2)),bins=np.linspace(0,10,11),density=True,label="Elliptic Match PU200",histtype="step",linewidth=3)
+plt.hist(ak.flatten(ak.num(signal_circle.TkCryCluGenMatchAll.Tk.pt,axis=2)),bins=np.linspace(0,10,11),density=True,label=r"$\Delta R 0.2$ Match PU200",histtype="step",linewidth=3)
+plt.hist(ak.flatten(ak.num(noPU_ellipse.TkCryCluGenMatchAll.Tk.pt,axis=2)),bins=np.linspace(0,10,11),density=True,label="Elliptic Match PU0",histtype="step",linewidth=3)
+plt.hist(ak.flatten(ak.num(noPU_circle.TkCryCluGenMatchAll.Tk.pt,axis=2)),bins=np.linspace(0,10,11),density=True,label=r"$\Delta R 0.2$ Match PU0",histtype="step",linewidth=3)
 plt.grid()
 plt.yscale("log")
 plt.legend()
@@ -221,6 +227,15 @@ genele_pt=flat(signal_ellipse.GenEle.pt)
 TkCryCluMatch_ellipse=flat(signal_ellipse.TkCryCluGenMatch.CryCluGenMatch.GenEle.pt)
 TkCryCluMatch_circle=flat(signal_circle.TkCryCluGenMatch.CryCluGenMatch.GenEle.pt)
 
+noPU_cirlce_pt=flat(noPU_circle.TkCryCluGenMatch.CryCluGenMatch.GenEle.pt)
+noPU_ellipse_pt=flat(noPU_ellipse.TkCryCluGenMatch.CryCluGenMatch.GenEle.pt)
+genele_noPU_pt=flat(noPU_ellipse.GenEle.pt)
+
+noPU_circle_h=hist.Hist(hist.axis.Variable(ptbins))
+noPU_circle_h.fill(noPU_cirlce_pt)
+
+noPU_ellipse_h=hist.Hist(hist.axis.Variable(ptbins))
+noPU_ellipse_h.fill(noPU_ellipse_pt)
 
 tkele_h=hist.Hist(hist.axis.Variable(ptbins))
 tkele_h.fill(tkele_pt)
@@ -228,21 +243,29 @@ tkele_h.fill(tkele_pt)
 genele_h=hist.Hist(hist.axis.Variable(ptbins))
 genele_h.fill(genele_pt)
 
+genele_noPU_h=hist.Hist(hist.axis.Variable(ptbins))
+genele_noPU_h.fill(genele_noPU_pt)
+
 TkCryCluMatch_ellipse_h=hist.Hist(hist.axis.Variable(ptbins))
 TkCryCluMatch_ellipse_h.fill(TkCryCluMatch_ellipse)
 
 TkCryCluMatch_circle_h=hist.Hist(hist.axis.Variable(ptbins))
 TkCryCluMatch_circle_h.fill(TkCryCluMatch_circle)
+
+
 #%%
-eff=TEfficiency()
+eff=TEfficiency(linewidth=3)
 eff.add(tkele_h,genele_h,label="TkEle")
-eff.add(TkCryCluMatch_ellipse_h,genele_h,label="Double Elliptic Match")
-eff.add(TkCryCluMatch_circle_h,genele_h,label=r"$\Delta R 0.2$ Match")
+eff.add(TkCryCluMatch_ellipse_h,genele_h,label="Elliptic Match PU200")
+eff.add(TkCryCluMatch_circle_h,genele_h,label=r"$\Delta R 0.2$ Match PU200")
+eff.add(noPU_ellipse_h,genele_noPU_h,label="Elliptic Match PU0")
+eff.add(noPU_circle_h,genele_noPU_h,label=r"$\Delta R 0.2$ Match PU0")
+
 eff.save("MatchFig/eff.pdf")
 
 # %%
 #!RATE
-minbias_ellipse=define(minbias_original,sample_name="minbias",ellipse=[[0.0125,0.3],[0.03,0.8]])
+minbias_ellipse=define(minbias_original,sample_name="minbias",ellipse=[[0.03,0.3]])
 minbias_circle=define(minbias_original,sample_name="minbias",ellipse=0.2)
 #%%
 
@@ -280,6 +303,8 @@ minbias_circle_rate=fill_rate(minbias_circle,minbias_circle_rate,"TkCryCluMatch/
 rate=TRate(log="y",xlim=(-5,70),markersize=10)
 rate.add(tkEle_rate,label="TkEle")
 rate.add(cryclu_rate,label="Standalone")
-rate.add(minbias_elliptic_rate,label="Double Elliptic Match")
+rate.add(minbias_elliptic_rate,label="Elliptic Match")
 rate.add(minbias_circle_rate,label=r"$\Delta R 0.2$ Match")
 rate.save("MatchFig/rate.pdf")
+
+# %%
