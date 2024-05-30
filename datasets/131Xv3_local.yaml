@@ -1,15 +1,19 @@
 dataset:
-    input_dir: /data/pviscone/PhD-notes/submodules/NanoHistDump/root_files/131Xv3
-    out_dir: /data/pviscone/PhD-notes/submodules/NanoHistDump/out
+    input_dir: /afs/cern.ch/work/p/pviscone/NanoHistDump/root_files/131Xv3
+    out_dir: /afs/cern.ch/work/p/pviscone/NanoHistDump/out
     tree_name: Events
     tag: 131Xv3
 
 samples:
-    DoubleElectrons:
-        input_sample_dir: DoubleElectron
+    DoubleElectronsPU200:
+        input_sample_dir: DoubleElectrons_PU200
+
+    DoubleElectronsPU0:
+        input_sample_dir: DoubleElectrons_PU0
 
     MinBias:
         input_sample_dir: MinBias
+
 
 scheme:
     "CaloEGammaCrystalClustersGCT": "CryClu"
