@@ -207,6 +207,7 @@ def elliptic_match(obj1,obj2,etaphi_vars,ellipse=None):
     deta=eta1-eta2
 
     #if ellipse is number
+    assert ellipse is not None, "ellipse must be a number or a tuple of pairs of numbers"
     if isinstance(ellipse,int|float):
         mask=(dphi**2/ellipse**2+deta**2/ellipse**2)<1
 
