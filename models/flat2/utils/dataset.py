@@ -55,10 +55,14 @@ features=[
     "PtRatio",
     #Auxiliary (to remove before training)
     "GenEle_pt",
-    "Tk_isReal",
-    "CryClu_phi",
+    "GenEle_eta",
+    "GenEle_vz",
+    "Tk_vz",
+    "CryClu_id",
     "CryClu_eta",
-    "evId"
+    "evId",
+    #removed here
+    "Tk_isReal",
 ]
 
 #%%
@@ -101,10 +105,14 @@ pu["CluTk"] = elliptic_match(pu.CryClu, pu.Tk, etaphi_vars=[["eta", "phi"], ["ca
 signal["CluTk","evId"]=np.arange(len(signal))
 pu["CluTk","evId"]=np.arange(len(signal),len(pu)+len(signal))
 
+signal["CluTk","CryCluGenMatch","CryClu","id"]=np.round(signal.CryCluGenMatch.CryClu.phi+3.15,2)*100+np.round(signal.CryCluGenMatch.CryClu.eta,2)*100000
+
+pu["CluTk","CryClu","id"]=np.round(pu.CryClu.phi+3.15,2)*100+np.round(pu.CryClu.eta,2)*100000
+
 
 
 # %%
-
+#!------------------------ SF ------------------------!#
 
 def SF(pu_pt, sig_pt):
     def plot(*, pu_pt, sig_pt, ratio, smooth_ratio, interpol_func):
@@ -139,11 +147,11 @@ def SF(pu_pt, sig_pt):
         ax.set_yscale("log")
         ax.legend()
         ax.set_xlabel("CryClu Pt [GeV]")
-        
+
         fig.savefig("../fig/ptClosure.pdf")
 
-    pu_pt = np.array(ak.flatten(ak.flatten(ak.drop_none(pu_pt), axis=2)))
-    sig_pt = np.array(ak.flatten(ak.flatten(ak.drop_none(sig_pt), axis=2)))
+    #pu_pt = np.array(ak.flatten(ak.flatten(ak.drop_none(pu_pt), axis=2)))
+    #sig_pt = np.array(ak.flatten(ak.flatten(ak.drop_none(sig_pt), axis=2)))
     #bins = bayesian_blocks(pu_pt, p0=1e-3)
     bins = np.array([22.75,38.75,65.75,111.5])
     bins=np.concatenate([np.linspace(1,16,30),bins])
@@ -166,9 +174,9 @@ def SF(pu_pt, sig_pt):
     return interp
 
 
-interp = SF(pu.CluTk.CryClu.pt, signal.CluTk.CryCluGenMatch.CryClu.pt)
 
 # %%
+#!------------------------ Dataframe ------------------------!#
 sig_features=[]
 bkg_features=[]
 for feature in features:
@@ -195,10 +203,20 @@ bkg_df.loc[bkg_df["CryClu_isLooseTkSS"]==2,"CryClu_isLooseTkSS"]=1
 
 bkg_df["label"]=0
 bkg_df["GenEle_pt"]=0
+bkg_df["GenEle_eta"]=0
+bkg_df["GenEle_vz"]=0
 
 sig_df["label"]=sig_df["Tk_isReal"]
 sig_df.loc[sig_df["label"]==0,"label"]=2
 sig_df=sig_df.drop(columns=["Tk_isReal"])
+
+
+sig_df=sig_df.drop_duplicates()
+bkg_df=bkg_df.drop_duplicates()
+
+
+interp = SF(bkg_df["CryClu_pt"].to_numpy(),sig_df["CryClu_pt"].to_numpy())
+
 
 
 sig_df["weight"]=1
@@ -213,7 +231,7 @@ bkg_df["weight"]=bkg_df["weight"]/bkg_sum
 df=pd.concat([sig_df,bkg_df])
 df.to_parquet("../131Xv3.parquet")
 
-
+plt.figure()
 corr=df.select_dtypes("number").corr()
 corr_plot=sns.heatmap(corr, cmap="vlag",  linewidths=1,center=0, xticklabels=True, yticklabels=True)
 plt.savefig("../fig/corr.pdf")
