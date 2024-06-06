@@ -223,6 +223,7 @@ def elliptic_match(obj1,obj2,etaphi_vars,ellipse=None):
     cart=cart[mask]
     cart["dR"]=np.sqrt(dphi[mask]**2+deta[mask]**2)
     cart["dPt"]=cart[name1][*(obj1_name+["pt"])]-cart[name2][*(obj2_name+["pt"])]
+    cart["PtRatio"]=cart[name1][*(obj1_name+["pt"])]/cart[name2][*(obj2_name+["pt"])]
     cart["dEta"]=deta[mask]
     cart["dPhi"]=dphi[mask]
     return ak.drop_none(cart)
