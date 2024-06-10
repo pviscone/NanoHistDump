@@ -53,6 +53,7 @@ features=[
     "dEta",
     "dPhi",
     "PtRatio",
+    "nMatch",
     #Auxiliary (to remove before training)
     "GenEle_pt",
     "GenEle_eta",
@@ -98,9 +99,11 @@ signal["CluTk"] = elliptic_match(
     etaphi_vars=[["CryClu/eta", "CryClu/phi"], ["caloEta", "caloPhi"]],
     ellipse=ellipse,
 )
-
+signal["CluTk","nMatch"]=ak.num(signal.CluTk.Tk.pt,axis=2)
+#%%
 pu = pu[ak.num(pu.GenEle) == 0]
 pu["CluTk"] = elliptic_match(pu.CryClu, pu.Tk, etaphi_vars=[["eta", "phi"], ["caloEta", "caloPhi"]], ellipse=ellipse)
+pu["CluTk","nMatch"]=ak.num(pu.CluTk.Tk.pt,axis=2)
 
 signal["CluTk","evId"]=np.arange(len(signal))
 pu["CluTk","evId"]=np.arange(len(signal),len(pu)+len(signal))
@@ -229,6 +232,8 @@ sig_df["weight"]=1/sig_sum
 bkg_df["weight"]=bkg_df["weight"]/bkg_sum
 
 df=pd.concat([sig_df,bkg_df])
+df["weight"]=df["weight"]*len(df)/np.sum(df["weight"])
+
 df.to_parquet("../131Xv3.parquet")
 
 plt.figure()
