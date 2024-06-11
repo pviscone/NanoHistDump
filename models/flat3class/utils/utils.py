@@ -16,9 +16,11 @@ def load_data(filename,features,categoricals=None, test_size=0.2,seed=666,label2
     else:
         raise ValueError("label2 must be an integer or 'drop'")
 
-    y=original_data["label"]
 
-    weight = original_data["weight"]
+    pt_mask=original_data["CryClu_pt"]<105
+    y=original_data["label"][pt_mask]
+
+    weight = original_data["weight"][pt_mask]
 
     if categoricals is not None:
         for cat in categoricals:
@@ -27,8 +29,7 @@ def load_data(filename,features,categoricals=None, test_size=0.2,seed=666,label2
             else:
                 print(f"Warning: {cat} is in categoricals but not in features")
 
-
-    data=original_data[features]
+    data=original_data[pt_mask][features]
 
 
     x_train, x_test, y_train, y_test, w_train, w_test = train_test_split(data, y, weight, test_size=test_size, random_state=seed)
