@@ -17,6 +17,7 @@ from cfg.functions.matching import elliptic_match, match_to_gen
 from cfg.functions.utils import set_name
 from python.sample import Sample
 
+hep.styles.cms.CMS["figure.autolayout"]=True
 hep.style.use("CMS")
 
 #!------------------------ SETTINGS ------------------------!#
@@ -238,5 +239,6 @@ df.to_parquet("../131Xv3.parquet")
 
 plt.figure()
 corr=df.select_dtypes("number").corr()
+sns.set(font_scale=1.4)
 corr_plot=sns.heatmap(corr, cmap="vlag",  linewidths=1,center=0, xticklabels=True, yticklabels=True)
 plt.savefig("../fig/corr.pdf")
