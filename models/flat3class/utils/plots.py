@@ -25,6 +25,7 @@ acab_palette = (
 hep.styles.cms.CMS["patch.linewidth"] = 2
 hep.styles.cms.CMS["lines.linewidth"] = 2
 #hep.styles.cms.CMS["axes.prop_cycle"] = cycler("color", acab_palette)
+hep.styles.cms.CMS["figure.autolayout"]=True
 hep.styles.cms.CMS["axes.grid"] = True
 
 hep.style.use(hep.style.CMS)
@@ -138,7 +139,7 @@ def plot_pt_roc(model,data, pt_bins=pt_bins,save=False,lumitext="All Cluster-Tra
 
             score_eff_idx=np.argmin(np.abs(tpr-e))
             score_eff=thresh[score_eff_idx]
-        #print(f"pt=[{minpt},{maxpt}] GeV:tpr={e}  fpr={fpr[score_eff_idx]:.2f} thr={score_eff:.2f}")
+            print(f"pt=[{minpt},{maxpt}] GeV:tpr={e}  fpr={fpr[score_eff_idx]:.2f} thr={score_eff:.2f}")
         roc_auc = auc(fpr, tpr)
         lab=f"pt=[{minpt},{maxpt}] (AUC = {roc_auc:.2f}) "
         if eff:
