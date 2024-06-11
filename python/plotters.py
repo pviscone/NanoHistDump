@@ -42,7 +42,8 @@ acab_palette = (
 hep.styles.cms.CMS["patch.linewidth"] = 2
 hep.styles.cms.CMS["lines.linewidth"] = 2
 hep.styles.cms.CMS["axes.prop_cycle"] = cycler("color", acab_palette)
-
+hep.styles.cms.CMS["legend.frameon"]=True
+hep.styles.cms.CMS["figure.autolayout"]=True
 hep.style.use(hep.style.CMS)
 
 
