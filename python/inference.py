@@ -9,15 +9,17 @@ def xgb_wrapper(model, events, features,nested=False, layout_template=None):
         model.load_model(model)
 
     for idx, feature in enumerate(features):
-        feature_list = feature.split("/")
 
-        if feature_list[-1] != model.feature_names[idx].split("_")[-1]:
+
+        if model.feature_names[idx] not in feature:
+            print(model.feature_names)
+            print(feature)
             raise ValueError(f"Feature name mismatch: {feature} instead of {model.feature_names[idx]}")
 
-        array=events[*feature_list]
+        array=events[*(feature.split("_"))]
         array=ak.drop_none(array)
         if nested:
-            array=ak.flatten(events[*feature_list])
+            array=ak.flatten(events[*(feature.split("_"))])
         array=ak.drop_none(array)
         array = ak.flatten(array).to_numpy(allow_missing=False)[:, None]
         if idx == 0:
@@ -27,6 +29,8 @@ def xgb_wrapper(model, events, features,nested=False, layout_template=None):
 
     dmatrix = xgb.DMatrix(matrix, feature_names=model.feature_names)
     scores = model.predict(dmatrix)
+    if scores.ndim >1:
+        scores=1-scores[:,0]
 
 
     if nested:
