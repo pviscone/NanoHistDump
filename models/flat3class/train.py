@@ -8,6 +8,11 @@ from utils.utils import load_data, predict
 
 importlib.reload(plots)
 
+import mplhep as hep
+
+hep.styles.cms.CMS["figure.autolayout"]=True
+hep.style.use(hep.style.CMS)
+
 features=[
     "CryClu_pt",
     "CryClu_ss",
@@ -31,6 +36,7 @@ features=[
     "nMatch"
 ]
 
+"""
 categorical=[
     "CryClu_isIso",
     "CryClu_isSS",
@@ -41,9 +47,10 @@ categorical=[
     "CryClu_looseL1TkMatchWP",
     "Tk_hitPattern",
 ]
+"""
 
 filename="131Xv3.parquet"
-#save_model="flat3class_131Xv3.json"
+save_model="flat3class_131Xv3.json"
 save_model=False
 load=False
 load="flat3class_131Xv3.json"
@@ -66,11 +73,11 @@ load="flat3class_131Xv3.json"
 def train(dtrain, dtest,save=False):
     params = {
         "tree_method": "exact",
-        "max_depth": 8,
+        "max_depth": 10,
         "learning_rate": 0.4,
-        "lambda": 300,
-        "alpha": 300,
-        "enable_categorical": True,
+        "lambda": 400,
+        "alpha": 400,
+        #"enable_categorical": True,
         #"objective": "binary:logistic",
         "objective": "multi:softprob",
         "num_class": 3,
@@ -85,7 +92,7 @@ def train(dtrain, dtest,save=False):
     return model, eval_result
 
 
-data,dtrain,dtest=load_data(filename,features,categoricals=categorical,label2=2)
+data,dtrain,dtest=load_data(filename,features,label2=2)
 
 if load:
     model=xgb.Booster()
@@ -96,12 +103,12 @@ else:
 #%%
 data["score"]=1-predict(model,data,features)[:,0]
 xgb.plot_importance(model,importance_type="gain",values_format="{v:.0f}")
-plt.savefig("fig/importance.pdf")
+plt.savefig("fig/importance_gain.pdf")
+xgb.plot_importance(model,importance_type="weight",values_format="{v:.0f}")
+plt.savefig("fig/importance_weight.pdf")
 
 plots.plot_scores(model,dtrain,dtest,log=False,save="fig/scores.pdf")
 plots.plot_pt_roc(model,data,save="fig/pt_roc.pdf")
-best_df=plots.plot_best_pt_roc(model,data,eff=[0.5,0.7,0.8,0.9,0.97,0.99],save="fig/best_pt_roc.pdf")
+plots.plot_best_pt_roc(model,data,eff=0.97,save="fig/best_pt_roc97.pdf")
+best_df=plots.plot_best_pt_roc(model,data,eff=[0.5,0.7,0.9,0.95,0.97,0.99],save="fig/best_pt_roc.pdf")
 
-# %%
-
-# %%
