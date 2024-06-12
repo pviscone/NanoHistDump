@@ -30,6 +30,7 @@ features=[
     "Tk_chi2Bend",
     "Tk_chi2RZ",
     "Tk_chi2RPhi",
+    "Tk_PtFrac",
     "dEta",
     "dPhi",
     "PtRatio",
@@ -48,6 +49,7 @@ def define(events, sample_name):
     events["TkEle"]=events.TkEle[events.TkEle.IDTightEle]
     events["CryClu","ss"] = events.CryClu.e2x5/events.CryClu.e5x5
     events["CryClu","relIso"] = events.CryClu.isolation/events.CryClu.pt
+
     if sample_name == "MinBias":
 
         events = events[ak.num(events.GenEle) == 0]
@@ -55,6 +57,7 @@ def define(events, sample_name):
         events["TkCryCluMatch"] = elliptic_match(
             events.CryClu, events.Tk, etaphi_vars=[["eta", "phi"], ["caloEta", "caloPhi"]], ellipse=ellipse
         )
+        events["TkCryCluMatch","Tk","PtFrac"] = events.TkCryCluMatch.Tk.pt/ak.sum(events.TkCryCluMatch.Tk.pt,axis=2)
 
         events["TkCryCluMatch","nMatch"]=ak.num(events.TkCryCluMatch.Tk.pt,axis=2)
 
@@ -62,6 +65,7 @@ def define(events, sample_name):
 
         maxbdt_mask=ak.argmax(events["TkCryCluMatch"].BDTscore,axis=2,keepdims=True)
         events["TkCryCluMatch"]=ak.flatten(events["TkCryCluMatch"][maxbdt_mask],axis=2)
+
 
     else:
         #!-------------------GEN Selection-------------------!#
@@ -88,6 +92,8 @@ def define(events, sample_name):
             etaphi_vars=[["CryClu/eta", "CryClu/phi"], ["caloEta", "caloPhi"]],
             ellipse=ellipse,
         )
+
+        events["TkCryCluGenMatch","Tk","PtFrac"] = events.TkCryCluGenMatch.Tk.pt/ak.sum(events.TkCryCluGenMatch.Tk.pt,axis=2)
 
         events["TkCryCluGenMatch","nMatch"]=ak.num(events.TkCryCluGenMatch.Tk.pt,axis=2)
 
