@@ -1,13 +1,17 @@
 import glob
 import os
 import sys
+from collections.abc import Iterable
 from functools import wraps
+from itertools import pairwise
+from numbers import Number
 
 import matplotlib.pyplot as plt
 import mplhep as hep
 import numpy as np
 from cycler import cycler
-from hist import intervals
+from hist import Hist, intervals, loc
+from hist import rebin as Rebin
 from matplotlib import colors
 from rich import print as pprint
 
@@ -42,8 +46,8 @@ acab_palette = (
 hep.styles.cms.CMS["patch.linewidth"] = 2
 hep.styles.cms.CMS["lines.linewidth"] = 2
 hep.styles.cms.CMS["axes.prop_cycle"] = cycler("color", acab_palette)
-hep.styles.cms.CMS["legend.frameon"]=True
-hep.styles.cms.CMS["figure.autolayout"]=True
+hep.styles.cms.CMS["legend.frameon"] = True
+hep.styles.cms.CMS["figure.autolayout"] = True
 hep.style.use(hep.style.CMS)
 
 
@@ -87,6 +91,7 @@ class BasePlotter:
         lumitext="PU 200",
         cmstext="Phase-2 Simulation",
         cmsloc=0,
+        rebin=1,
         **kwargs,
     ):
         if (fig is None and ax is not None) or (fig is not None and ax is None):
@@ -130,6 +135,7 @@ class BasePlotter:
 
         self.markers = ["v", "^", "X", "P", "d", "*", "p", "o"]
         self.markers_copy = self.markers.copy()
+        self.rebin=Rebin(rebin)
 
     def add_text(self, *args, **kwargs):
         self.ax.text(*args, **kwargs)
@@ -181,6 +187,7 @@ class TH1(BasePlotter):
 
     @merge_kwargs()
     def add(self, hist, **kwargs):
+        hist=hist[self.rebin]
         hep.histplot(hist, ax=self.ax, clip_on=True, **kwargs)
         sys.stderr = open(os.devnull, "w")
         self.ax.legend()
@@ -196,6 +203,7 @@ class TH2(BasePlotter):
 
     @merge_kwargs()
     def add(self, hist, **kwargs):
+        hist=hist[self.rebin]
         if self.zlog:
             kwargs["norm"] = colors.LogNorm(vmin=self.zlim[0], vmax=self.zlim[1])
         hep.hist2dplot(hist, ax=self.ax, **kwargs)
@@ -211,6 +219,8 @@ class TEfficiency(BasePlotter):
 
     @merge_kwargs()
     def add(self, num, den, **kwargs):
+        num=num[self.rebin]
+        den=den[self.rebin]
         num = num.to_numpy()
         edges = num[1]
         num = num[0]
@@ -227,13 +237,32 @@ class TEfficiency(BasePlotter):
         self.ax.legend()
         sys.stderr = sys.__stderr__
 
+    @merge_kwargs()
+    def add_scoreCuts(self, numhist3d, den, ptedges_thr, **kwargs):
+        if isinstance(ptedges_thr, Iterable):
+            thr_list = ptedges_thr[1]
+            pt_edges = ptedges_thr[0]
+            hist=Hist(numhist3d.axes[1])
+            for thr,(minpt,maxpt) in zip(thr_list,pairwise(pt_edges)):
+                integrated=numhist3d.integrate(2,loc(minpt),loc(maxpt))
+                temp_h=integrated.integrate(0,loc(thr),None)
+                hist+=temp_h
+                self.ax.axvline(minpt,color="red",linestyle="--",linewidth=1.25,zorder=-2,alpha=0.6)
+        elif isinstance(ptedges_thr, Number):
+            hist = numhist3d.integrate(2).integrate(0,loc(thr),None)
+
+        return self.add(hist, den, **kwargs)
+
+
+
 
 class TRate(BasePlotter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @merge_kwargs(markeredgecolor="black", markersize=0)
+    @merge_kwargs(markeredgecolor="black", markersize=10)
     def add(self, hist, **kwargs):
+        hist=hist[self.rebin]
         centers = hist.axes[0].centers
         values = hist.values()
         if "marker" not in kwargs:
@@ -246,3 +275,25 @@ class TRate(BasePlotter):
         sys.stderr = open(os.devnull, "w")
         self.ax.legend()
         sys.stderr = sys.__stderr__
+
+    @merge_kwargs(markeredgecolor="black", markersize=10)
+    def add_scoreCuts(self, hist2d, ptedges_thr, **kwargs):
+        if ptedges_thr is not None:
+            if isinstance(ptedges_thr, Iterable):
+                pt_edges = ptedges_thr[0]
+                thrs = ptedges_thr[1]
+                hist = Hist(hist2d.axes[0])
+                for thr, (minpt, maxpt) in zip(thrs, pairwise(pt_edges)):
+                    mask = np.ones_like(hist2d.axes[0].centers)
+                    idx_mask = np.bitwise_and(hist2d.axes[0].centers > minpt, hist2d.axes[0].centers < maxpt)
+                    mask[~idx_mask] = 0
+                    hist += hist2d[:, loc(thr)] * mask
+                    self.ax.axvline(minpt, color="red", linestyle="--", linewidth=1, alpha=0.8, zorder=-2)
+            elif isinstance(ptedges_thr, Number):
+                hist = hist2d[:, loc(ptedges_thr)]
+
+        rate_hist = Hist(hist.axes[0])
+        for i in range(len(hist.values())):
+            rate_hist[i] = hist.integrate(0, i, None)
+
+        return self.add(rate_hist, **kwargs)
