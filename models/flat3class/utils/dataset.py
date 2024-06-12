@@ -23,7 +23,7 @@ hep.style.use("CMS")
 #!------------------------ SETTINGS ------------------------!#
 ellipse = [[0.03, 0.3]]
 BarrelEta = 1.479
-save = False
+save = True
 
 signal_path = "/afs/cern.ch/work/p/pviscone/NanoHistDump/root_files/131Xv3/DoubleElectrons_PU200"
 pu_path = "/afs/cern.ch/work/p/pviscone/NanoHistDump/root_files/131Xv3/MinBias"
@@ -69,7 +69,7 @@ features=[
 
 #%%
 #!--------------------- Collection building ---------------------!#
-pu = Sample("", path=pu_path, tree_name="Events", scheme_dict=schema, nevents=91000).events
+pu = Sample("", path=pu_path, tree_name="Events", scheme_dict=schema).events
 signal = Sample("", path=signal_path, tree_name="Events", scheme_dict=schema).events
 
 def new_var(events):
@@ -235,10 +235,66 @@ bkg_df["weight"]=bkg_df["weight"]/bkg_sum
 df=pd.concat([sig_df,bkg_df])
 df["weight"]=df["weight"]*len(df)/np.sum(df["weight"])
 
-df.to_parquet("../131Xv3.parquet")
+
+def compute_excluding(df,groupby,what):
+    if what in ["max","min"]:
+        group_max = df.groupby(groupby).transform(what)
+        mask = df == group_max
+        value=np.inf if what=="min" else -np.inf
+        df_temp = df.mask(mask, value)
+        second_max = df_temp.groupby(groupby).transform(what)
+        result = np.where(mask, second_max, group_max)
+        result[result==value]=np.nan
+    elif what=="mean":
+        group_sum = df.groupby(groupby).transform("sum")
+        group_count = df.groupby(groupby).transform("count")
+        result = ((group_sum - df) / (group_count - 1)).to_numpy()
+
+
+    elif what=="std":
+        group_sum = df.groupby(groupby).transform("sum")
+        group_sum_of_squares = df.pow(2).groupby(groupby).transform("sum")
+        group_count = df.groupby(groupby).transform("count")
+
+        # Step 2: Create a mask to identify the current entry
+        mask = df.notna()  # This mask is true for all entries as df has no missing values
+
+        # Step 3: Adjust the sum, sum of squares, and count by excluding the current entry
+        adjusted_sum = group_sum - df
+        adjusted_sum_of_squares = group_sum_of_squares - df.pow(2)
+        adjusted_count = group_count - 1
+
+        # Step 4: Compute the variance excluding the current entry
+        adjusted_variance = (adjusted_sum_of_squares - (adjusted_sum.pow(2) / adjusted_count)) / (adjusted_count)
+
+        # Step 5: Compute the standard deviation
+        adjusted_std = np.sqrt(adjusted_variance)
+
+        # Replace NaN values resulting from division by zero (when count was 1)
+        adjusted_std = adjusted_std.mask(adjusted_count == 0, np.nan)
+        result=adjusted_std.to_numpy()
+
+    else:
+        raise ValueError(f"Unknown operation '{what}'")
+
+
+    return result
+
+df_multidx=df.set_index(["evId","CryClu_id"])
+df["maxPtRatio_other"]=compute_excluding(df_multidx["PtRatio"],["evId","CryClu_id"],"max")
+df["minPtRatio_other"]=compute_excluding(df_multidx["PtRatio"],["evId","CryClu_id"],"min")
+df["meanPtRatio_other"]=compute_excluding(df_multidx["PtRatio"],["evId","CryClu_id"],"mean")
+df["stdPtRatio_other"]=compute_excluding(df_multidx["PtRatio"],["evId","CryClu_id"],"std")
+df["Tk_PtFrac"]=df["Tk_pt"]/df.groupby(["evId","CryClu_id"])["Tk_pt"].transform("sum")
+
+
+
+if save:
+    df.to_parquet("../131Xv3.parquet")
 
 plt.figure()
 corr=df.select_dtypes("number").corr()
 sns.set(font_scale=1.4)
 corr_plot=sns.heatmap(corr, cmap="vlag",  linewidths=1,center=0, xticklabels=True, yticklabels=True)
 plt.savefig("../fig/corr.pdf")
+
