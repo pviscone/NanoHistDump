@@ -1,4 +1,7 @@
+from itertools import pairwise
+
 import awkward as ak
+import numpy as np
 
 from python.TH1utils import split_and_flat
 
@@ -41,10 +44,10 @@ def fill2D(h,events,fill_mode="normal",weight=None,**kwargs):
         for score_idx,score_cut in enumerate(score_cuts):
             score_mask=score>score_cut
             maxpt_mask=ak.argmax(pt[score_mask],axis=1,keepdims=True)
-            maxpt=ak.flatten(ak.drop_none(pt[score_mask][maxpt_mask]))
+            maxpt=ak.flatten(pt[score_mask][maxpt_mask])
             add_data=add_axes(mask=[score_mask, maxpt_mask])
-            for pt_thr,pt_bin_center in zip(hist_obj.axes[0].edges, hist_obj.axes[0].centers):
-                hist_obj.fill(pt_bin_center,score_centers[score_idx],*add_data, weight=ak.sum(maxpt>=pt_thr))
+            for pt_bin_center,(lowpt,highpt) in zip(hist_obj.axes[0].centers,pairwise(hist_obj.axes[0].edges)):
+                hist_obj.fill(pt_bin_center,score_centers[score_idx],*add_data, weight=ak.sum(np.bitwise_and(maxpt>=lowpt,maxpt<highpt)))
 
         hist_obj.axes[0].label="Online pT cut"
         hist_obj.axes[1].label="Score cut"
