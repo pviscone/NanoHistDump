@@ -109,7 +109,7 @@ def plot_stack_score(model,data,features,save=False,pt_bins=pt_bins):
 
 
 
-def plot_pt_roc(model,data, pt_bins=pt_bins,save=False,lumitext="All Cluster-Track Couples",eff=False):
+def plot_pt_roc(model,data, pt_bins=pt_bins,save=False,lumitext="All Cluster-Track Couples",eff=False,thrs_to_select=False):
     thrs=[0.4,0.6,0.8,0.9]
     colors=["red","dodgerblue","green","gold"]
     markers=["o","s","^","v","X","*"]
@@ -140,10 +140,22 @@ def plot_pt_roc(model,data, pt_bins=pt_bins,save=False,lumitext="All Cluster-Tra
             score_eff_idx=np.argmin(np.abs(tpr-e))
             score_eff=thresh[score_eff_idx]
             print(f"pt=[{minpt},{maxpt}] GeV:tpr={e}  fpr={fpr[score_eff_idx]:.2f} thr={score_eff:.2f}")
+        if thrs_to_select:
+            if isinstance(thrs_to_select,Iterable):
+                thr_to_select=thrs_to_select[idx]
+            else:
+                thr_to_select=thrs_to_select
+            thr_idx=np.argmin(np.abs(thresh-thr_to_select))
+            print(f"pt=[{minpt},{maxpt}] GeV:tpr={tpr[thr_idx]:.2f}  fpr={fpr[thr_idx]:.2f} thr={thr_to_select:.2f}")
+
+
         roc_auc = auc(fpr, tpr)
         lab=f"pt=[{minpt},{maxpt}] (AUC = {roc_auc:.2f}) "
         if eff:
             lab+=f"$\epsilon_S$={e:.2f}: {score_eff:.2f}"
+
+        if thrs_to_select:
+            lab+=f"$\epsilon_S$={tpr[thr_idx]:.2f}: {thr_to_select:.2f}"
 
         for col,thr in zip(colors,thrs):
             label=""
@@ -176,8 +188,8 @@ def plot_pt_roc(model,data, pt_bins=pt_bins,save=False,lumitext="All Cluster-Tra
     return ax
 
 
-def plot_best_pt_roc(model,data, pt_bins=pt_bins,save=False,eff=False):
+def plot_best_pt_roc(model,data, pt_bins=pt_bins,save=False,eff=False,thrs_to_select=False):
     new_data=data.astype(float)
     new_data=new_data.groupby(["evId","CryClu_id"]).max("score").reset_index()
-    plot_pt_roc(model,new_data, pt_bins,save=save,lumitext="Best Couple per Cluster",eff=eff)
+    plot_pt_roc(model,new_data, pt_bins,save=save,lumitext="Best Couple per Cluster",eff=eff,thrs_to_select=thrs_to_select)
     return new_data
