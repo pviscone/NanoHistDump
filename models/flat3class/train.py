@@ -30,10 +30,15 @@ features=[
     "Tk_chi2Bend",
     "Tk_chi2RZ",
     "Tk_chi2RPhi",
+    "Tk_PtFrac",
     "dEta",
     "dPhi",
     "PtRatio",
-    "nMatch"
+    "nMatch",
+    #"maxPtRatio_other",
+    #"minPtRatio_other",
+    #"meanPtRatio_other",
+    #"stdPtRatio_other",
 ]
 
 """
@@ -92,7 +97,7 @@ def train(dtrain, dtest,save=False):
     return model, eval_result
 
 
-data,dtrain,dtest=load_data(filename,features,label2=2)
+data,dtrain,dtest=load_data(filename,features,label2=2,test_size=0.3)
 
 if load:
     model=xgb.Booster()
@@ -109,6 +114,16 @@ plt.savefig("fig/importance_weight.pdf")
 
 plots.plot_scores(model,dtrain,dtest,log=False,save="fig/scores.pdf")
 plots.plot_pt_roc(model,data,save="fig/pt_roc.pdf")
-plots.plot_best_pt_roc(model,data,eff=0.97,save="fig/best_pt_roc97.pdf")
-best_df=plots.plot_best_pt_roc(model,data,eff=[0.5,0.7,0.9,0.95,0.97,0.99],save="fig/best_pt_roc.pdf")
 
+#%%
+#plots.plot_best_pt_roc(model,data,eff=0.97,save="fig/best_pt_roc97.pdf")
+#best_df=plots.plot_best_pt_roc(model,data,eff=[0.35,0.6,0.85,0.96,0.97,0.99],save="fig/best_pt_roc.pdf")
+best_df=plots.plot_best_pt_roc(model,data,thrs_to_select=[0.99,0.96,0.68,0.67,0.77,0.92],save="fig/pt_roc_tkEleEff.pdf")
+
+#%%
+#[0.87,0.65,0.25,0.15,0.1,0.072]
+plots.plot_best_pt_roc(model,data,thrs_to_select=[0.87,0.65,0.25,0.15,0.1,0.072],save="fig/pt_roc_tkEleRate.pdf")
+
+#%%
+#[0.85,0.7,0.35,0.3,0.55,0.85]
+plots.plot_best_pt_roc(model,data,thrs_to_select=[0.85,0.7,0.35,0.3,0.55,0.85],save="fig/chosen_pt_roc.pdf")
