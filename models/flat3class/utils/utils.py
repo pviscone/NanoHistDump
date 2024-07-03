@@ -4,8 +4,6 @@ from sklearn.model_selection import train_test_split
 
 
 def load_data(filename,features,categoricals=None, test_size=0.2,seed=666,label2=2):
-    test_size=0.2
-    seed=666
     original_data=pd.read_parquet(filename)
     #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
