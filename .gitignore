@@ -123,3 +123,4 @@ out/*.root
 *.npy
 *.parquet
 **/prova
+**/*prj*/*
