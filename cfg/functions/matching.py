@@ -25,6 +25,8 @@ def match_to_gen(obj, gen, dr_cut=0.1, etaphi_vars=(("eta", "phi"), ("eta", "phi
     cart = cart[dr < dr_cut]
     cart["dR"] = dr[dr < dr_cut]
     cart["dPt"] = cart[name1].pt - cart[name2].pt
+    cart["dEta"]=cart[name1].eta-cart[name2].eta
+    cart["dPhi"]=delta_phi(cart[name1].phi,cart[name2].phi)
 
     if etaphi_vars[0] != ("eta", "phi"):
         cart[name1, "eta"] = cart[name1, "old_eta"]
