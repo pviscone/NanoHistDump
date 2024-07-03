@@ -1,3 +1,4 @@
+
 #%%
 import importlib
 
@@ -17,24 +18,24 @@ features=[
     "CryClu_pt",
     "CryClu_ss",
     "CryClu_relIso",
-    "CryClu_isIso",
+    #"CryClu_isIso",
     "CryClu_isSS",
-    "CryClu_isLooseTkIso",
-    "CryClu_isLooseTkSS",
-    "CryClu_brems",
+    #"CryClu_isLooseTkIso",
+    #"CryClu_isLooseTkSS",
+    #"CryClu_brems",
     "CryClu_standaloneWP",
     "CryClu_looseL1TkMatchWP",
-    "Tk_hitPattern",
-    #"Tk_pt",
-    "Tk_nStubs",
-    "Tk_chi2Bend",
-    "Tk_chi2RZ",
+    #"Tk_hitPattern",
+    #"Tk_nStubs",
+    #"Tk_chi2Bend",
+    #"Tk_chi2RZ",
     "Tk_chi2RPhi",
     "Tk_PtFrac",
     "dEta",
     "dPhi",
     "PtRatio",
     "nMatch",
+    #"Tk_pt",
     #"maxPtRatio_other",
     #"minPtRatio_other",
     #"meanPtRatio_other",
@@ -58,7 +59,7 @@ filename="131Xv3.parquet"
 save_model="flat3class_131Xv3.json"
 save_model=False
 load=False
-load="flat3class_131Xv3.json"
+#load="flat3class_131Xv3.json"
 #!TODO
 #! Focal loss
 #? ranking
@@ -79,7 +80,7 @@ def train(dtrain, dtest,save=False):
     params = {
         "tree_method": "exact",
         "max_depth": 10,
-        "learning_rate": 0.4,
+        "learning_rate": 0.65,
         "lambda": 400,
         "alpha": 400,
         #"enable_categorical": True,
@@ -88,7 +89,7 @@ def train(dtrain, dtest,save=False):
         "num_class": 3,
         "eval_metric": "mlogloss",
     }
-    num_round = 25
+    num_round = 12
     evallist = [(dtrain, "train"), (dtest, "eval")]
     eval_result = {}
     model = xgb.train(params, dtrain, num_round, evallist, evals_result=eval_result)
@@ -107,9 +108,9 @@ else:
     plots.plot_loss(eval_result,save="fig/loss.pdf")
 #%%
 data["score"]=1-predict(model,data,features)[:,0]
-xgb.plot_importance(model,importance_type="gain",values_format="{v:.0f}")
+xgb.plot_importance(model,importance_type="gain",show_values=False)
 plt.savefig("fig/importance_gain.pdf")
-xgb.plot_importance(model,importance_type="weight",values_format="{v:.0f}")
+xgb.plot_importance(model,importance_type="weight",show_values=False)
 plt.savefig("fig/importance_weight.pdf")
 
 plots.plot_scores(model,dtrain,dtest,log=False,save="fig/scores.pdf")
