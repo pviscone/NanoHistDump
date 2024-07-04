@@ -286,7 +286,8 @@ df["minPtRatio_other"]=compute_excluding(df_multidx["PtRatio"],["evId","CryClu_i
 df["meanPtRatio_other"]=compute_excluding(df_multidx["PtRatio"],["evId","CryClu_id"],"mean")
 df["stdPtRatio_other"]=compute_excluding(df_multidx["PtRatio"],["evId","CryClu_id"],"std")
 df["Tk_PtFrac"]=df["Tk_pt"]/df.groupby(["evId","CryClu_id"])["Tk_pt"].transform("sum")
-
+df["abs_dEta"]=df["dEta"].abs()
+df["abs_dPhi"]=df["dPhi"].abs()
 
 
 if save:
