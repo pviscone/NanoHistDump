@@ -167,10 +167,6 @@ def plot_pt_roc(model,data, pt_bins=pt_bins,save=False,lumitext="All Cluster-Tra
         line,=ax.plot(fpr, tpr, label=lab,alpha=0.9)
         lines.append(line)
         custom_lines.append(Line2D([0], [0], color=plt.gca().lines[-1].get_color(), lw=2,linestyle="-",label=f"{minpt}-{maxpt} GeV",marker=markers[idx],markersize=10,markeredgecolor="black"))
-
-
-
-
     #ax.plot([0, 1], [0, 1], "k--")
     ax.set_xlim([-0.05, 0.5])
     ax.set_ylim([0.0, 1.05])
@@ -184,12 +180,11 @@ def plot_pt_roc(model,data, pt_bins=pt_bins,save=False,lumitext="All Cluster-Tra
     hep.cms.lumitext(lumitext, ax=ax)
     if save:
         fig.savefig(save)
-    plt.show()
     return ax
 
 
 def plot_best_pt_roc(model,data, pt_bins=pt_bins,save=False,eff=False,thrs_to_select=False):
     new_data=data.astype(float)
     new_data=new_data.groupby(["evId","CryClu_id"]).max("score").reset_index()
-    plot_pt_roc(model,new_data, pt_bins,save=save,lumitext="Best Couple per Cluster",eff=eff,thrs_to_select=thrs_to_select)
-    return new_data
+    ax=plot_pt_roc(model,new_data, pt_bins,save=save,lumitext="Best Couple per Cluster",eff=eff,thrs_to_select=thrs_to_select)
+    return ax,new_data
