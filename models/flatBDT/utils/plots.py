@@ -30,10 +30,23 @@ hep.styles.cms.CMS["axes.grid"] = True
 
 hep.style.use(hep.style.CMS)
 
-def plot_scores(preds_train,y_train, preds_test,y_test,save=False,log=False):
+def plot_loss(eval_result, loss="mlogloss", save=False):
+    fig, ax = plt.subplots()
+    ax.plot(eval_result["train"][loss], label="train")
+    ax.plot(eval_result["eval"][loss], label="eval")
+    #ax.set_yscale("log")
+    ax.set_xlabel("Boosting Round")
+    ax.set_ylabel("LogLoss")
+    ax.legend()
+    plt.show()
+    if save:
+        fig.savefig(save)
+    return ax
+
+def plot_scores(preds_train,y_train, preds_test,y_test,bins = np.linspace(0, 1, 30), save=False,log=False,func=lambda x:x):
     fig, ax = plt.subplots()
 
-    bins = np.linspace(0, 1, 30)
+
 
     classes=np.unique(y_train)
     colors=["dodgerblue","salmon","green","purple"]
@@ -51,13 +64,13 @@ def plot_scores(preds_train,y_train, preds_test,y_test,save=False,log=False):
             hatch="\\"
             marker="^"
 
-        train=np.histogram(cls_pred_train, bins=bins, density=True)
+        train=np.histogram(func(cls_pred_train), bins=bins, density=True)
 
         centers=(train[1][1:]+train[1][:-1])/2
 
         ax.plot(centers,train[0],label=f"y={int(cls)} Train",marker=marker,color=color,markersize=10,markeredgecolor="black",zorder=999)
 
-        ax.hist(cls_pred_test, bins=bins, label=f"y={int(cls)} Test", hatch=hatch,density=True,histtype="step",color=color)
+        ax.hist(func(cls_pred_test), bins=bins, label=f"y={int(cls)} Test", hatch=hatch,density=True,histtype="step",color=color)
 
     ax.set_xlabel("1-Score(Bkg)")
     if log:
@@ -71,7 +84,7 @@ def plot_scores(preds_train,y_train, preds_test,y_test,save=False,log=False):
 
 
 
-def plot_pt_roc(data,score_name="score", pt_bins=(0,5,10,20,30,50,150),save=False,lumitext="All Cluster-Track Couples",eff=False,thrs_to_select=False):
+def plot_pt_roc(data, score="score", labkey="label" , ptkey="CryClu_pt",pt_bins=(0,5,10,20,30,50,150),save=False,lumitext="All Cluster-Track Couples",eff=False,thrs_to_select=False):
     thrs=[0.4,0.6,0.8,0.9]
     colors=["red","dodgerblue","green","gold"]
     markers=["o","s","^","v","X","*"]
@@ -80,11 +93,11 @@ def plot_pt_roc(data,score_name="score", pt_bins=(0,5,10,20,30,50,150),save=Fals
     custom_lines=[]
     lines=[]
     for idx,(minpt,maxpt) in enumerate(pairwise(pt_bins)):
-        pt_data=data[np.bitwise_and(data["CryClu_pt"]>minpt,data["CryClu_pt"]<maxpt)]
+        pt_data=data[np.bitwise_and(data[ptkey]>minpt,data[ptkey]<maxpt)]
 
         #ddata=xgb.DMatrix(pt_data[features],label=pt_data["label"],enable_categorical=True)
-        preds = pt_data[score_name].to_numpy()
-        y=pt_data["label"].to_numpy()
+        preds = pt_data[score].to_numpy()
+        y=pt_data[labkey].to_numpy()
         y[y==2]=1
         #y=ddata.get_label()
 
@@ -145,10 +158,10 @@ def plot_pt_roc(data,score_name="score", pt_bins=(0,5,10,20,30,50,150),save=Fals
     return ax
 
 
-def plot_best_pt_roc(data, score_name="score",pt_bins=(0,5,10,20,30,50,150),save=False,eff=False,thrs_to_select=False):
+def plot_best_pt_roc(data, score="score", labkey="label", ptkey="CryClu_pt",pt_bins=(0,5,10,20,30,50,150),save=False,eff=False,thrs_to_select=False):
     new_data=data.astype(float)
-    new_data=new_data.groupby(["evId","CryClu_id"]).max(score_name).reset_index()
-    ax=plot_pt_roc(new_data,score_name=score_name, pt_bins=pt_bins,save=save,lumitext="Best Couple per Cluster",eff=eff,thrs_to_select=thrs_to_select)
+    new_data=new_data.groupby(["evId","CryClu_id"]).max(score).reset_index()
+    ax=plot_pt_roc(new_data,score=score, labkey=labkey, ptkey=ptkey, pt_bins=pt_bins,save=save,lumitext="Best Couple per Cluster",eff=eff,thrs_to_select=thrs_to_select)
     return ax,new_data
 
 
@@ -321,3 +334,30 @@ def profile_int_dec(data,zeros=True,max_int_bit=12,min_dec_bit=-14,sign_prop=Tru
 
 
     return ax
+
+
+
+def plot_importance(model, save=None):
+    xgb.plot_importance(model,importance_type="gain",show_values=False)
+
+    if save:
+        plt.savefig(f"{save}/importance_average_gain.pdf")
+    xgb.plot_importance(model,importance_type="weight",show_values=False)
+
+    if save:
+        plt.savefig(f"{save}/importance_weight.pdf")
+
+    rank={}
+    for key in model.get_score():
+        rank[key]=model.get_score(importance_type="weight")[key]*model.get_score(importance_type="gain")[key]
+
+
+    fig,ax=plt.subplots()
+    sorted_rank = {k: v for k, v in sorted(rank.items(), key=lambda item: item[1])}
+
+    ax.barh(list(sorted_rank.keys()),width=sorted_rank.values())
+    ax.set_xlabel("Gain")
+
+    if save:
+        plt.savefig(f"{save}/importance_gain.pdf")
+    return sorted_rank
