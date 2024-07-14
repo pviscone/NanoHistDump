@@ -61,12 +61,12 @@ os.environ["XILINX_AP_INCLUDE"] = "/opt/Xilinx/Vitis_HLS/2023.1/include"
 os.environ["JSON_ROOT"]="/afs/cern.ch/work/p/pviscone/conifer"
 
 #!----------------------CFG----------------------!#
-backend="cpp"
+backend="vivado"
 
 if backend=="vivado":
     cfg = conifer.backends.xilinxhls.auto_config()
     cfg["XilinxPart"] = "xcvu13p-flga2577-2-e"
-    cfg["Precision"] = "ap_fixed<64,32>"
+    cfg["Precision"] = "ap_fixed<32,16>"
 
 
 elif backend=="py":
@@ -76,7 +76,7 @@ elif backend=="cpp":
     cfg=conifer.backends.cpp.auto_config()
     cfg["Precision"] = "float"
 
-cfg["OutputDir"] = "conifer_prj"
+cfg["OutputDir"] = "quantized_prj"
 
 
 
@@ -103,9 +103,9 @@ def convert_and_evaluate(model,dmatrix, cfg, name, save=False):
 
 
 #%%
-#!----------------------Light model----------------------!#
+#!----------------------model----------------------!#
 
-hlsmodel,df_test["XGBScore"],df_test["HLSScore"]=convert_and_evaluate(xgbmodel,dtest,cfg,"",save="fig/conifer/rocs.pdf")
+hlsmodel,df_test["XGBScore"],df_test["HLSScore"]=convert_and_evaluate(xgbmodel,dtest,cfg,"",save="fig/quantized/rocs.pdf")
 
 #%%
 #!----------------------BUILD----------------------!#
@@ -115,62 +115,8 @@ if build:
 # %%
 
 
-plots.plot_best_pt_roc(df_test,ptkey="CC_pt",score="HLSScore",thrs_to_select=[0.85,0.7,0.35,0.3,0.55,0.85],save="fig/conifer/hls_roc.pdf")
-
-
-plots.plot_best_pt_roc(df_test,ptkey="CC_pt",score="XGBScore",thrs_to_select=[0.85,0.7,0.35,0.3,0.55,0.85],save="fig/xgb_roc.pdf")
+plots.plot_best_pt_roc(df_test,ptkey="CC_pt",score="HLSScore",thrs_to_select=[0.85,0.7,0.35,0.3,0.55,0.85],save="fig/quantized/hls_roc.pdf")
 
 
 
 # %%
-%load_ext autoreload
-%autoreload 2
-
-importlib.reload(plots)
-import plots
-
-
-inputs={key:df_test[key].to_numpy() for key in [*features,"XGBScore"]}
-plots.profile_int_dec(inputs,sign_prop=True)
-plt.savefig("fig/conifer/input_profile.pdf")
-#!profila threshold e values
-#! prova 2 interi 10 decimali
-#!prova pca
-
-
-
-# %%
-import numpy as np
-
-
-
-def model_profile(model,what="value"):
-    feat_map=model._ensembleDict["feature_names"]
-    res={}
-    def update_res(tree):
-        arr=np.array(getattr(tree,what))
-        arr=arr[np.array(tree.feature)==feat_map[feat]]
-        res[feat]=np.concatenate([res[feat],arr])
-
-    for feat in feat_map:
-        res[feat]=np.array([])
-        for tree in model.trees:
-            if model.n_classes>2:
-                for subtree in tree:
-                    update_res(subtree)
-            else:
-                update_res(tree)
-
-
-    return res
-
-
-val=model_profile(hlsmodel,"value")
-thr=model_profile(hlsmodel,"threshold")
-
-
-# %%
-plots.profile_int_dec(val,sign_prop=False)
-plt.savefig("fig/conifer/model_value_profile.pdf")
-plots.profile_int_dec(thr,sign_prop=False)
-plt.savefig("fig/conifer/model_threshold_profile.pdf")

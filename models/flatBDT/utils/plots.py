@@ -180,14 +180,19 @@ def profile(data,bins = np.logspace(-7, 12, 50,base=2), sign_prop=True, legend=T
     yticks_labels = []
 
     for i, (entry, values) in enumerate(data.items()):
+
         # Separate positive and negative values
         pos_values = values[values > 0]
         neg_values = -values[values < 0]  # Make negative values positive for histogram
 
         if zero_dummy_value:
-            zeros_values=values[values==zero_dummy_value]
+            zeros_values_pos=values[values==zero_dummy_value]
             pos_values=pos_values[pos_values!=zero_dummy_value]
-            zero_hist, _ = np.histogram(zeros_values, bins=bins)
+            zero_hist_pos, _ = np.histogram(zeros_values_pos, bins=bins)
+
+            zeros_values_neg=-values[values==-zero_dummy_value]
+            neg_values=neg_values[neg_values!=zero_dummy_value]
+            zero_hist_neg, _ = np.histogram(zeros_values_neg, bins=bins)
 
 
         # Calculate histogram data
@@ -199,28 +204,36 @@ def profile(data,bins = np.logspace(-7, 12, 50,base=2), sign_prop=True, legend=T
         if sign_prop:
             norm_list=[pos_hist.max(),neg_hist.max()]
             if zero_dummy_value:
-                norm_list.append(zero_hist.max())
+                norm_list.append(zero_hist_pos.max())
+                norm_list.append(zero_hist_neg.max())
             norm=np.max(norm_list)
             pos_hist = pos_hist / norm
             neg_hist = neg_hist / norm
             if zero_dummy_value:
-                zero_hist=zero_hist/norm
+                zero_hist_pos=zero_hist_pos/norm
+                zero_hist_neg=zero_hist_neg/norm
         else:
             pos_norm=[np.max(pos_hist)]
+            neg_norm=[np.max(neg_hist)]
             if zero_dummy_value:
-                pos_norm.append(zero_hist.max())
+                pos_norm.append(zero_hist_pos.max())
+                neg_norm.append(zero_hist_neg.max())
             pos_hist = pos_hist / np.max(pos_norm)
-            neg_hist = neg_hist / np.max(neg_hist)
+            neg_hist = neg_hist / np.max(neg_norm)
             if zero_dummy_value:
-                zero_hist=zero_hist/np.max(pos_norm)
+                zero_hist_pos=zero_hist_pos/np.max(pos_norm)
+                zero_hist_neg=zero_hist_neg/np.max(neg_norm)
 
         ax.axhline(base_position, color='black', lw=1)
         ax.axhline(base_position+1.05, color='black',alpha=0.2,linestyle="--", lw=1)
         ax.axhline(base_position-1.05, color='black',alpha=0.2,linestyle="--", lw=1)
 
-
-        pos_frac=len(pos_values)/len(values)
-        neg_frac=len(neg_values)/len(values)
+        if len(values)<1:
+            pos_frac=1
+            neg_frac=1
+        else:
+            pos_frac=len(pos_values)/len(values)
+            neg_frac=len(neg_values)/len(values)
 
 
         # Plot positive histogram horizontally with a specific color
@@ -232,13 +245,18 @@ def profile(data,bins = np.logspace(-7, 12, 50,base=2), sign_prop=True, legend=T
         ax.fill_between(np.repeat(bins,2)[1:-1], base_position, np.repeat(base_position - neg_hist,2), alpha=1, color='dodgerblue', label='Negative' if i == 0 else "")
 
         if sign_percent:
-            ax.text(bins[-1]/8,base_position+0.8,f"{pos_frac*100:.1f}%",color='red')
-            ax.text(bins[-1]/8,base_position+0.4,f"{neg_frac*100:.1f}%",color='dodgerblue')
+            ax.text(bins[-1]/8,base_position+0.9,f"{pos_frac*100:.1f}%",color='red')
+            ax.text(bins[-1]/8,base_position+0.3,f"{neg_frac*100:.1f}%",color='dodgerblue')
 
         if zero_dummy_value:
-            zero_frac=len(zeros_values)/len(values)
-            ax.fill_between(np.repeat(bins,2)[1:-1], base_position, np.repeat(base_position + zero_hist,2), alpha=1, color='green', label='Zero' if i == 0 else "")
-            ax.text(bins[-1]/8,base_position+0.6,f"{zero_frac*100:.1f}%",color='green')
+            zero_frac_pos=len(zeros_values_pos)/len(values)
+            ax.fill_between(np.repeat(bins,2)[1:-1], base_position, np.repeat(base_position + zero_hist_pos,2), alpha=1, color='green', label='Zero+' if i == 0 else "")
+            ax.text(bins[-1]/8,base_position+0.7,f"{zero_frac_pos*100:.1f}%",color='green')
+
+            zero_frac_neg=len(zeros_values_neg)/len(values)
+            ax.fill_between(np.repeat(bins,2)[1:-1], base_position, np.repeat(base_position - zero_hist_neg,2), alpha=1, color='purple', label='Zero-' if i == 0 else "")
+            ax.text(bins[-1]/8,base_position+0.5,f"{zero_frac_neg*100:.1f}%",color='purple')
+
 
         ax.boxplot(pos_values,positions=[base_position+0.25],widths=0.2,vert=False,patch_artist=True,boxprops=dict(facecolor='salmon',alpha=0.6),notch=False, whis=[2.5,97.5],showfliers=False)
         ax.boxplot(neg_values,positions=[base_position-0.25],widths=0.2,vert=False,patch_artist=True,boxprops=dict(facecolor='deepskyblue',alpha=0.6),notch=False , whis=[2.5,97.5],showfliers=False)
@@ -284,21 +302,23 @@ def profile_int_dec(data,zeros=True,max_int_bit=12,min_dec_bit=-14,sign_prop=Tru
         decimals,integers = np.modf(data[key])
 
         if zeros:
-            integers[integers==0]=0.25
+            integers[np.bitwise_and(integers==0,decimals>=0)]=0.25
+            integers[np.bitwise_and(integers==0,decimals<0)]=-0.25
 
 
         decs[key]=decimals
         ints[key]=integers
 
         arr=np.array([])
+        #!
         for i in np.unique(integers):
             mask=integers==i
             dec_masked=decimals[mask]
-
             n_diff=np.min([len(dec_masked),nmax_differences])
             dec_masked=np.random.choice(dec_masked,size=n_diff,replace=False)
-
             arr=np.append(arr,calculate_differences(dec_masked))*np.sign(i)
+
+
         delta[key]=arr
     fig,ax=plt.subplots(1,3,figsize=(20,5*len(data)),sharey=True)
     plt.subplots_adjust(wspace=0)
