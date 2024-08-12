@@ -24,6 +24,7 @@ load=False
 train_file="/afs/cern.ch/work/p/pviscone/NanoHistDump/models/flatBDT/dataset/131Xv3_train.parquet"
 test_file="/afs/cern.ch/work/p/pviscone/NanoHistDump/models/flatBDT/dataset/131Xv3_test.parquet"
 
+classes=2
 features=[
     "CryClu_pt",
     "CryClu_ss",
@@ -72,33 +73,39 @@ range_map={
 }
 
 scaler=BitScaler()
-scaler.fit(range_map)
+scaler.fit(range_map,target=(-1,1))
 
-#!Prova PCA e aggiungi scaler a load parquet
-df_train,dtrain=utils.load_parquet(train_file,features,scaler=scaler,ptkey="CC_pt")
-df_test,dtest=utils.load_parquet(test_file,features,scaler=scaler,ptkey="CC_pt")
+#!Prova PCA
+df_train,dtrain=utils.load_parquet(train_file,features,scaler=None,ptkey="CC_pt",label2=2 if classes>2 else 1)
+df_test,dtest=utils.load_parquet(test_file,features,scaler=None,ptkey="CC_pt",label2=2 if classes>2 else 1)
 
 
+""" w_train=dtrain.get_weight()
+w_test=dtest.get_weight()
+
+dtrain.set_weight(w_train*2)
+dtest.set_weight(w_test*2) """
 
 #%%
 def train(dtrain, dtest,save=False):
     params = {
         "tree_method": "hist",
-        "max_depth": 10,
-        "learning_rate": 0.65,
+        "max_depth": 20,
+        "learning_rate": 0.45,
         "lambda": 1000,
         "alpha": 1000,
         #"colsample_bytree":0.9,
-        "subsample":0.9,
+        "subsample":0.85,
         #"gamma":5,
         #"min_split_loss":5,
         "min_child_weight":80,
         #"enable_categorical": True,
         #"objective": "binary:logistic",
-        "objective": "multi:softprob",
-        "num_class": 3,
-        "eval_metric": "mlogloss",
+        "objective": "multi:softprob" if classes>2 else "binary:logistic",
+        "num_class": classes,
+        "eval_metric": "mlogloss" if classes>2 else "logloss",
     }
+    params.pop("num_class") if classes==2 else None
     num_round = 9
     evallist = [(dtrain, "train"), (dtest, "eval")]
     eval_result = {}
@@ -113,10 +120,35 @@ if load:
     model.load_model(load)
 else:
     model,eval_result=train(dtrain,dtest,save=save_model)
-    plots.plot_loss(eval_result, loss="mlogloss",save="fig/loss.pdf")
+    plots.plot_loss(eval_result, loss="mlogloss" if classes>2 else "logloss",save="fig/loss.pdf")
 
-df_train["score"]=1-model.predict(dtrain)[:,0]
-df_test["score"]=1-model.predict(dtest)[:,0]
+df_train["score"]=1-model.predict(dtrain)[:,0] if classes>2 else model.predict(dtrain)
+df_test["score"]=1-model.predict(dtest)[:,0] if classes>2 else model.predict(dtest)
+
+#%%
+from utils.plots import profile_int_dec
+inout_dict=df_test[[*features,"score"]].to_dict(orient="list")
+inout_dict={key:np.array(entry) for key,entry in inout_dict.items()}
+
+thr_dict={feat:[] for feat in features}
+gain_dict={feat:[] for feat in features}
+
+for feat in features:
+    for tree in model:
+        df_tree=tree.trees_to_dataframe()
+        thr_dict[feat].append(df_tree[df_tree["Feature"]==feat]["Split"].to_numpy())
+        gain_dict[feat].append(df_tree[df_tree["Feature"]==feat]["Gain"].to_numpy())
+    thr_dict[feat]=np.concatenate(thr_dict[feat])
+    gain_dict[feat]=np.concatenate(gain_dict[feat])
+
+ax=profile_int_dec(inout_dict,sign_prop=False,title="Input",min_dec_bit=12,max_int_bit=15,nmax_differences=10)
+plt.savefig("fig/inout_profile.pdf")
+
+ax=profile_int_dec(thr_dict,sign_prop=False,title="Thresh.",min_dec_bit=12,max_int_bit=15,nmax_differences=10)
+plt.savefig("fig/thr_profile.pdf")
+
+ax=profile_int_dec(gain_dict,sign_prop=False,title="Gain",min_dec_bit=12,max_int_bit=15,nmax_differences=10)
+plt.savefig("fig/gain_profile.pdf")
 #%%
 
 rank=plots.plot_importance(model,save="fig")
