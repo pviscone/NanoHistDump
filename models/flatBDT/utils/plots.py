@@ -156,7 +156,7 @@ def plot_pt_roc(
             lab += rf"$\epsilon_S$={e:.2f}: {score_eff:.2f}"
 
         if thrs_to_select:
-            lab += rf"$\epsilon_S$={tpr[thr_idx]:.2f}: {thr_to_select:.2f}"
+            lab += rf"$\epsilon_S$={tpr[thr_idx]:.2f} $\epsilon_B$={fpr[thr_idx]:.2f}: {thr_to_select:.2f}"
 
         for col, thr in zip(colors, thrs):
             label = ""
