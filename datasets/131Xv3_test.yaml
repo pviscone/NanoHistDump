@@ -1,0 +1,19 @@
+dataset:
+    input_dir: /afs/cern.ch/work/p/pviscone/NanoHistDump/root_files/131Xv3
+    out_dir: /afs/cern.ch/work/p/pviscone/NanoHistDump/out
+    tree_name: Events
+    tag: 131Xv3
+
+samples:
+    DoubleElectronsPU200_test:
+        input_sample_dir: DoubleElectrons_PU200/test
+
+    MinBias_test:
+        input_sample_dir: MinBias/test
+
+
+scheme:
+    "CaloEGammaCrystalClustersGCT": "CryClu"
+    "GenEl": "GenEle"
+    "DecTkBarrel": "Tk"
+    "TkEleL2": "TkEle"
