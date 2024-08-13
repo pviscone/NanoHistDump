@@ -67,15 +67,13 @@ range_map = {
     "abs_dPhi": (0, 0.3),
 }
 
-classes = 3
+
 scaler = BitScaler()
 scaler.fit(range_map, target=(-1, 1))
 scaler = None
-pca = True
+pca = False
+classes = 3
 
-save_model = f"light{classes}_131Xv3.json"
-save_model = False
-load = False
 
 df_train, dtrain, pca = utils.load_parquet(
     train_file, features, scaler=scaler, ptkey="CC_pt", label2=2 if classes > 2 else 1, pca=pca
@@ -93,32 +91,34 @@ dtest.set_weight(w_test*2) """
 
 
 # %%
+save_model = f"light{classes}_131Xv3.json"
+save_model = False
+load = False
 def train(dtrain, dtest, save=False):
     params2 = {
         "tree_method": "hist",
-        "max_depth": 20,
+        "max_depth": 12,
         "learning_rate": 0.45,
-        "lambda": 1000,
-        "alpha": 1000,
-        # "colsample_bytree":0.9,
-        "subsample": 0.85,
+        "lambda": 1500,
+        "alpha": 1500,
+        #"colsample_bytree":0.8,
+        "subsample": 0.8,
         # "gamma":5,
-        # "min_split_loss":5,
+        "min_split_loss":5,
         "min_child_weight": 80,
         "objective": "binary:logistic",
-        "num_class": 2,
         "eval_metric": "logloss",
     }
     params3 = {
         "tree_method": "hist",
-        "max_depth": 20,
-        "learning_rate": 0.45,
+        "max_depth": 12,
+        "learning_rate": 0.5,
         "lambda": 1000,
         "alpha": 1000,
         # "colsample_bytree":0.9,
-        "subsample": 0.85,
+        "subsample": 0.8,
         # "gamma":5,
-        # "min_split_loss":5,
+        "min_split_loss":5,
         "min_child_weight": 80,
         "objective": "multi:softprob",
         "num_class": classes,
@@ -126,7 +126,8 @@ def train(dtrain, dtest, save=False):
     }
 
     params = params3 if classes > 2 else params2
-    num_round = 9
+    num_round = 12 if classes > 2 else 15
+
     evallist = [(dtrain, "train"), (dtest, "eval")]
     eval_result = {}
     model = xgb.train(params, dtrain, num_round, evallist, evals_result=eval_result)
@@ -177,8 +178,6 @@ plots.plot_pt_roc(df_train, ptkey="CC_pt", save=f"fig/class{classes}/train_pt_ro
 plots.plot_pt_roc(df_test, ptkey="CC_pt", save=f"fig/class{classes}/test_pt_roc.pdf")
 
 # %%
-
-
 ax1, _ = plots.plot_best_pt_roc(
     df_train, ptkey="CC_pt", thrs_to_select=[0.85, 0.7, 0.35, 0.3, 0.55, 0.85], pt_bins=(0, 5, 10, 20, 30, 50, 150)
 )
