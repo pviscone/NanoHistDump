@@ -3,7 +3,7 @@ import numpy as np
 import xgboost as xgb
 
 
-def xgb_wrapper(model, events, features,nested=False, layout_template=None):
+def xgb_wrapper(model, events, features, nested=False, layout_template=None):
     if "str" in str(type(model)):
         model = xgb.Booster()
         model.load_model(model)
@@ -16,10 +16,14 @@ def xgb_wrapper(model, events, features,nested=False, layout_template=None):
             print(feature)
             raise ValueError(f"Feature name mismatch: {feature} instead of {model.feature_names[idx]}")
 
-        array=events[*(feature.split("_"))]
+        if feature.startswith("abs_"):
+            feature = feature.replace("abs_", "")
+            array = np.abs(events[*(feature.split("_"))])
+        else:
+            array=events[*(feature.split("_"))]
         array=ak.drop_none(array)
         if nested:
-            array=ak.flatten(events[*(feature.split("_"))])
+            array=ak.flatten(array)
         array=ak.drop_none(array)
         array = ak.flatten(array).to_numpy(allow_missing=False)[:, None]
         if idx == 0:
