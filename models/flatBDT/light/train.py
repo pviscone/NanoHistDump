@@ -21,7 +21,6 @@ hep.style.use(hep.style.CMS)
 train_file = "/afs/cern.ch/work/p/pviscone/NanoHistDump/models/flatBDT/dataset/131Xv3_train.parquet"
 test_file = "/afs/cern.ch/work/p/pviscone/NanoHistDump/models/flatBDT/dataset/131Xv3_test.parquet"
 
-classes = 3
 features = [
     "CryClu_pt",
     "CryClu_ss",
@@ -54,12 +53,6 @@ features = [
     # "stdPtRatio_other",
 ]
 
-
-save_model = f"light{classes}_131Xv3.json"
-save_model = False
-load = False
-
-#!USA MINMAX SCALER INVECE (e vedi se si puó salvare)
 range_map = {
     "CryClu_pt": (0, 120),
     "CryClu_ss": (0, 1),
@@ -74,10 +67,15 @@ range_map = {
     "abs_dPhi": (0, 0.3),
 }
 
+classes = 3
 scaler = BitScaler()
 scaler.fit(range_map, target=(-1, 1))
 scaler = None
-pca = False
+pca = True
+
+save_model = f"light{classes}_131Xv3.json"
+save_model = False
+load = False
 
 df_train, dtrain, pca = utils.load_parquet(
     train_file, features, scaler=scaler, ptkey="CC_pt", label2=2 if classes > 2 else 1, pca=pca
