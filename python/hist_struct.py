@@ -1,9 +1,10 @@
 import awkward as ak
 import hist
 from rich import print as pprint
+import numpy as np
+from itertools import pairwise
 
-from python.TH1utils import auto_axis, auto_range, fill, split_and_flat
-from python.TH2utils import fill2D
+from python.THaxisUtils import auto_axis, auto_range, split_and_flat, split
 
 
 class Hist:
@@ -38,15 +39,12 @@ class Hist:
 
     def __init__(
         self,
-        collection_name,
-        /,
-        var_name=None,
-        collection_name2=None,
-        var_name2=None,
+        var_paths,
         hist_range=None,
         bins=None,
         fill_mode="normal",
         weight=None,
+        name=None,
         **kwargs,
     ):
         """
@@ -61,116 +59,136 @@ class Hist:
             bins (int | list[int,int], optional): Binning. Defaults to None (automatic binning).
 
         """
-        self.collection_name = collection_name
-        self.var_name = var_name
+        _fill_modes = ["normal", "rate_vs_ptcut", "rate_pt_vs_score"]
+        assert fill_mode in _fill_modes, f"fill_mode must be one of {_fill_modes}"
+
+        if bins is None:
+            bins = [None] * len(var_paths)
+        if hist_range is None:
+            hist_range = [None] * len(var_paths)
+
+        if isinstance(var_paths, str):
+            var_paths = [var_paths]
+            bins = [bins]
+            hist_range = [hist_range]
+
+        self.var_paths = var_paths
         self.hist_range = hist_range
         self.bins = bins
+        self.dim = len(var_paths)
 
-        self.entire_sample = self.collection_name == ""
-        self.collection_name2 = collection_name2
-        self.var_name2 = var_name2
-        if self.collection_name2 is not None:
-            self.dim = 2
-        else:
-            self.dim = 1
-
-        if self.var_name is None:
-            self.entire_collection = True
-            self.single_var = False
-        else:
-            self.entire_collection = False
-            self.single_var = True
-
-        self.delete_on_add_hist = True
+        self.delete_on_add_hist = False  #! Never used. To implement
         self.fill_mode = fill_mode
         self.weight = weight
         self.kwargs = kwargs
 
+        self.hist_obj = None
 
-        if self.dim==1:
-            self.name=f"{self.collection_name}/{self.var_name}"
-        elif self.dim==2:
-            if self.collection_name2 != self.collection_name:
-                self.name=f"{self.collection_name}-{self.collection_name2.split('/')[-1]}/{self.var_name}_vs_{self.var_name2}"
+        collections = [var_path.split("~")[0] for var_path in self.var_paths]
+        variables = [var_path.split("~")[1] for var_path in self.var_paths]
+
+        if name is None:
+            if self.dim > 1:
+                base_path = "_vs_".join(collections)
+                base_path = base_path.replace("/", "_")
+                variables = "_vs_".join(variables)
+                self.name = f"{base_path}/{variables}"
             else:
-                self.name=f"{self.collection_name}/{self.var_name}_vs_{self.var_name2}"
+                self.name = f"{collections[0]}/{variables[0]}"
+        else:
+            self.name = name
 
-
-
-    def add_hist(self,events) -> None:
+    def add_hist(self, events) -> None:
         if self.weight is not None:
-            path=self.weight.split("/")
+            path = self.weight.split("/")
             self.weight = events[*path]
-        if self.dim == 1:
-            pprint(f"Creating hist {self.collection_name}/{self.var_name}")
-            hist_obj=self._add_hist_1d(events)
-        elif self.dim == 2:
-            pprint(f"Creating hist {self.collection_name}/{self.var_name}_vs_{self.collection_name2}/{self.var_name2}")
-            hist_obj=self._add_hist_2d(events)
-        return hist_obj
+        pprint(f"Creating hist {self.var_paths}")
+        pprint(f"fill_mode: {self.fill_mode}\n")
+        self.build_hist(events)
+        return self.fill(events)
 
-
-
-    def _add_hist_1d(self, events) -> None:
-
-
-        if "numpy" in str(type(self.bins)):
-            axis = hist.axis.Variable(self.bins, name=self.var_name)
-        elif self.hist_range is None and self.bins is None:
-            data=split_and_flat(events,self.collection_name,self.var_name)
-            axis=auto_axis(data,self)
-        elif self.hist_range is None and self.bins is not None:
-            data=split_and_flat(events,self.collection_name,self.var_name)
-            axis=auto_range(data,self)
-        elif self.hist_range is not None and self.bins is None:
-            axis = hist.axis.Regular(50, *self.hist_range, name=self.var_name)
+    def _add_ax(self, events, var_path, bins=None, hist_range=None) -> None:
+        ax_name = var_path
+        if "numpy" in str(type(bins)):
+            axis = hist.axis.Variable(bins, name=ax_name)
+        elif hist_range is None and bins is None:
+            data = split_and_flat(events, ax_name)
+            axis = auto_axis(data, self)
+        elif hist_range is None and bins is not None:
+            data = split_and_flat(events, ax_name)
+            axis = auto_range(data, self)
+        elif hist_range is not None and bins is None:
+            axis = hist.axis.Regular(50, *hist_range, name=ax_name)
         else:
-            axis = hist.axis.Regular(self.bins, *self.hist_range, name=self.var_name)
+            axis = hist.axis.Regular(bins, *hist_range, name=ax_name)
+        return axis
 
-        axes=[axis]
-        if "additional_axes" in self.kwargs:
-            add_axes=[hist.axis.Variable(i) for i in self.bins[1:]]
-            axes.extend(add_axes)
+    def build_hist(self, events):
+        axes = [
+            self._add_ax(events, var_path, bins=self.bins[idx], hist_range=self.hist_range[idx])
+            for idx, var_path in enumerate(self.var_paths)
+        ]
+        self.hist_obj = hist.Hist(*axes, storage=hist.storage.Double())
 
+    def fill(self, events):
+        if self.fill_mode == "normal":
+            # Used for normal histograms
+            # Used in 3D for computing genmatch efficiency on objects with a score and WP depending on the online pt (score, genpt, onlinept)
+            data = [split_and_flat(events, var_path) for var_path in self.var_paths]
+            self.hist_obj.fill(*data, weight=self.weight)
 
-        self.hist_obj = hist.Hist(*axes)
-        hist_obj=fill(self,events,fill_mode=self.fill_mode,weight=self.weight,**self.kwargs)
+        elif self.fill_mode == "rate_vs_ptcut":
+            # Used for computing rate on objects without a score
+            # data = [ pt, ...]
+            data = [split(events, var_path) for var_path in self.var_paths]
+            n_ev = len(events)
+            freq_x_bx = 2760.0 * 11246 / 1000
+            pt = data[0]
+            maxpt_mask = ak.argmax(pt, axis=1, keepdims=True)
+            additional_data = [array[maxpt_mask] for array in data[1:]]
+            maxpt = ak.flatten(ak.drop_none(pt[maxpt_mask]))
+            for thr, pt_bin_center in zip(self.hist_obj.axes[0].edges, self.hist_obj.axes[0].centers):
+                self.hist_obj.fill(pt_bin_center, *additional_data, weight=ak.sum(maxpt >= thr))
+            self.hist_obj.axes[0].label = "Online pT cut"
+            self.name = self.name.split("/", 1)[0] + "/rate_vs_ptcut"
+            if len(additional_data) > 0:
+                add_vars = [var.split("~")[1] for var in self.var_paths[1:]]
+                self.name += f"+{'_vs_'.join(add_vars)}"
+            self.hist_obj = self.hist_obj * freq_x_bx / n_ev
 
-        if self.delete_on_add_hist:
-            names = self.collection_name.split("/")
-            del events[*names, self.var_name]
+        elif self.fill_mode == "rate_pt_vs_score":
+            # Used for computing rate on objects with a score
+            # data = [online pt, score , ...]
+            data = [split(events, var_path) for var_path in self.var_paths]
+            n_ev = len(events)
+            freq_x_bx = 2760.0 * 11246 / 1000
+            pt = data[0]
+            score = data[1]
 
-        return hist_obj
+            score_cuts = self.hist_obj.axes[1].edges[:-1]
+            score_centers = self.hist_obj.axes[1].centers
+            for score_idx, score_cut in enumerate(score_cuts):
+                score_mask = score > score_cut
+                maxpt_mask = ak.argmax(pt[score_mask], axis=1, keepdims=True)
+                maxpt = ak.flatten(pt[score_mask][maxpt_mask])
 
-    def _add_hist_2d(self, events) -> None:
-        var1 = self.var_name
-        var2 = self.var_name2
+                additional_data = [array[score_mask][maxpt_mask] for array in data[2:]]
+                for pt_bin_center, (lowpt, highpt) in zip(
+                    self.hist_obj.axes[0].centers, pairwise(self.hist_obj.axes[0].edges)
+                ):
+                    self.hist_obj.fill(
+                        pt_bin_center,
+                        score_centers[score_idx],
+                        *additional_data,
+                        weight=ak.sum(np.bitwise_and(maxpt >= lowpt, maxpt < highpt)),
+                    )
 
-        if "numpy" in str(type(self.bins[0])):
-            axis1= hist.axis.Variable(self.bins[0], name=self.collection_name + "/" + var1)
-            axis2= hist.axis.Variable(self.bins[1], name=self.collection_name2 + "/" + var2)
-        elif self.hist_range is None and self.bins is None:
-            data1=split_and_flat(events,self.collection_name,var1)
-            data2=split_and_flat(events,self.collection_name2,var2)
-            axis1=auto_axis(data1,self)
-            axis2=auto_axis(data2,self)
-        elif self.hist_range is None and self.bins is not None:
-            data1=split_and_flat(events,self.collection_name,var1)
-            data2=split_and_flat(events,self.collection_name2,var2)
-            axis1=auto_range(data1,self)
-            axis2=auto_range(data2,self)
-        elif self.hist_range is not None and self.bins is None:
-            axis1 = hist.axis.Regular(50, *self.hist_range[0], name=self.collection_name + "/" + var1)
-            axis2 = hist.axis.Regular(50, *self.hist_range[1], name=self.collection_name2 + "/" + var2)
-        else:
-            axis1 = hist.axis.Regular(self.bins[0], *self.hist_range[0], name=self.collection_name + "/" + var1)
-            axis2 = hist.axis.Regular(self.bins[1], *self.hist_range[1], name=self.collection_name2 + "/" + var2)
+            self.hist_obj.axes[0].label = "Online pT cut"
+            self.hist_obj.axes[1].label = "Score cut"
+            self.name = self.name.split("/", 1)[0] + "/rate_pt_vs_score"
+            if len(additional_data) > 0:
+                add_vars = [var.split("~")[1] for var in self.var_paths[2:]]
+                self.name += f"+{'_vs_'.join(add_vars)}"
+            self.hist_obj = self.hist_obj * freq_x_bx / n_ev
 
-        axes=[axis1,axis2]
-        if "additional_axes" in self.kwargs:
-            add_axes=[hist.axis.Variable(i) for i in self.bins[2:]]
-            axes.extend(add_axes)
-
-
-        self.hist_obj = hist.Hist(*axes)
-        return fill2D(self,events,fill_mode=self.fill_mode,weight=self.weight,**self.kwargs)
+        return self.hist_obj

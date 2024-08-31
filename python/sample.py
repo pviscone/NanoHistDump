@@ -186,56 +186,15 @@ class Sample:
             raise ValueError("No histogram created. Create one first")
         for h in hists:
             try:
-                if h.single_var:
-                    to_add = h.add_hist(self.events)
-                    self.hist_file[h.name] = to_add
+                to_add = h.add_hist(self.events)
+                self.hist_file[h.name] = to_add
 
-                else:
-                    try:
-                        if h.collection_name != "":
-                            names = h.collection_name.split("/")
-                            arr = self.events[*names]
-                        else:
-                            arr = self.events
-
-                        def recursive(arr, h):
-                            if len(arr.fields) > 0:
-                                fields = arr.fields
-                                for field in fields:
-                                    if len(arr[field].fields) > 0:
-                                        if h.collection_name != "":
-                                            new_name = h.collection_name + "/" + field
-                                        else:
-                                            new_name = field
-                                        new_h = Hist(new_name, hist_range=h.hist_range, bins=h.bins)
-                                    else:
-                                        new_h = Hist(h.collection_name, field, hist_range=h.hist_range, bins=h.bins)
-                                    recursive(arr[field], new_h)
-                            # when all the collection is consumed and each variable is deleted, the recursive function will see the empty collection as a variable. Delete it
-                            elif h.collection_name == "":
-                                del self.events[*h.var_name.split("/")]
-                            else:
-                                new_h = Hist(h.collection_name, h.var_name, hist_range=h.hist_range, bins=h.bins)
-                                to_add = new_h.add_hist(self.events)
-                                self.hist_file[h.name] = to_add
-
-                        recursive(arr, h)
-                    except Exception as error:
-                        pprint(f"\nError creating hist {h.collection_name}\n")
-                        self.errors[f"{h.collection_name}"] = error
-                        pprint(error)
             except Exception as error:
-                if h.dim == 1:
-                    pprint(f"\nError creating hist {h.collection_name}/{h.var_name}\n")
-                    self.errors[f"{h.collection_name}/{h.var_name}"] = error
-                elif h.dim == 2:
-                    pprint(
-                        f"\nError creating hist {h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}\n"
-                    )
-                    self.errors[f"{h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}"] = error
+                pprint(f"\nError creating hist {h.var_paths}\n")
+                self.errors[f"{h.var_paths}"] = error
                 print(error)
-                # import traceback
-                # print(traceback.format_exc())
+                #import traceback
+                #print(traceback.format_exc())
 
     def hist_report(self):
         n_errors = len(self.errors)
