@@ -4,8 +4,6 @@ import os
 import warnings
 
 import awkward as ak
-import dask_awkward as dak
-import hist
 import uproot
 import vector
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
@@ -14,6 +12,7 @@ from rich import print as pprint
 from python.hist_struct import Hist
 
 NanoAODSchema.warn_missing_crossrefs = False
+
 warnings.filterwarnings("ignore", module="coffea.*")
 vector.register_awkward()
 
@@ -86,23 +85,26 @@ class Sample:
         if events is None:
             list_files = glob.glob(os.path.join(path, "*.root"))
 
-            lazy_events = NanoEventsFactory.from_root(
-                [{file: tree_name} for file in list_files], schemaclass=NanoAODSchema, delayed=True
+            dask_events = NanoEventsFactory.from_root(
+                [{file: tree_name} for file in list_files],
+                schemaclass=NanoAODSchema,
             ).events()
 
-            if nevents is None:
-                nevents = dak.num(lazy_events, axis=0).compute()
+            events_dict = {}
+            for old_collection_name, new_collection_name in scheme_dict.items():
+                arr = dask_events[old_collection_name]
+                if nevents is not None:
+                    arr = arr[:nevents]
+                arr = ak.with_name(arr.compute(), "Momentum4D")
+                arr._layout.content.parameters["collection_name"] = new_collection_name
+                events_dict[new_collection_name] = arr
 
-            self.events = ak.Array([{}] * nevents)
+            self.events = ak.Array(events_dict, behavior=dask_events.behavior)
+            if nevents is None:
+                nevents = len(self.events)
 
             if scheme_dict is None:
                 raise ValueError("No scheme provided. Please provide a scheme to rename the collections")
-            for old_name, new_name in scheme_dict.items():
-                if old_name not in lazy_events.fields:
-                    raise ValueError(f"Collection {old_name} does not exist.")
-                self.events[new_name] = ak.with_name(lazy_events[old_name][:nevents].compute(), "Momentum4D")
-                self.events[new_name].layout.content.parameters["collection_name"] = new_name
-
         else:
             self.events = events
             nevents = len(events)
@@ -111,7 +113,7 @@ class Sample:
         self.sample_name = name
         self.tag = tag
         self.hist_file = None
-        self.errors={}
+        self.errors = {}
 
     @property
     def fields(self):
@@ -139,46 +141,6 @@ class Sample:
 
         """
         return len(self.events)
-
-    def _rename_collection(self, old_name: str, new_name: str) -> None:
-        """
-        Rename a collection in the sample
-
-        Args:
-        ----
-            old_name (str): collection to be renamed
-            new_name (str): new name of the collection
-
-        """
-        if new_name in self.fields:
-            raise ValueError(
-                f"Collection {new_name} already exists. If you want to override it use __setitem__ method."
-            )
-        if old_name not in self.fields:
-            raise ValueError(f"Collection {old_name} does not exist.")
-
-        idx = self.events.layout._fields.index(old_name)
-        self.events.layout._fields[idx] = new_name
-
-    def add_collection(self, collection_name: str, /, ak_array: ak.Array | None = None) -> None:
-        """
-        Add a new collection. It could be empty or filled with an awkward array
-
-        Args:
-        ----
-            collection_name (`str`): name of the collection
-            ak_array (ak.Array | None, optional): awkward record to add as collection. If None it add an empty collection. Defaults to None.
-
-        """
-        if collection_name in self.fields:
-            raise ValueError(
-                f"Collection {collection_name} already exists. If you want to override it use __setitem__ method."
-            )
-
-        if ak_array is None:
-            self.events[collection_name] = ak.Array([{}] * self.n, with_name="Momentum4D")
-        else:
-            self.events[collection_name] = ak.with_name(ak_array, "Momentum4D")
 
     def get_vars(self, /, collection: str | None = None) -> list[str] | dict[str, list[str]]:
         """
@@ -225,7 +187,7 @@ class Sample:
         for h in hists:
             try:
                 if h.single_var:
-                    to_add=h.add_hist(self.events)
+                    to_add = h.add_hist(self.events)
                     self.hist_file[h.name] = to_add
 
                 else:
@@ -249,36 +211,35 @@ class Sample:
                                     else:
                                         new_h = Hist(h.collection_name, field, hist_range=h.hist_range, bins=h.bins)
                                     recursive(arr[field], new_h)
-                            #when all the collection is consumed and each variable is deleted, the recursive function will see the empty collection as a variable. Delete it
-                            elif h.collection_name=="":
-                                    del self.events[*h.var_name.split("/")]
+                            # when all the collection is consumed and each variable is deleted, the recursive function will see the empty collection as a variable. Delete it
+                            elif h.collection_name == "":
+                                del self.events[*h.var_name.split("/")]
                             else:
                                 new_h = Hist(h.collection_name, h.var_name, hist_range=h.hist_range, bins=h.bins)
-                                to_add=new_h.add_hist(self.events)
+                                to_add = new_h.add_hist(self.events)
                                 self.hist_file[h.name] = to_add
 
                         recursive(arr, h)
                     except Exception as error:
                         pprint(f"\nError creating hist {h.collection_name}\n")
-                        self.errors[f"{h.collection_name}"]=error
+                        self.errors[f"{h.collection_name}"] = error
                         pprint(error)
             except Exception as error:
-
                 if h.dim == 1:
                     pprint(f"\nError creating hist {h.collection_name}/{h.var_name}\n")
-                    self.errors[f"{h.collection_name}/{h.var_name}"]=error
+                    self.errors[f"{h.collection_name}/{h.var_name}"] = error
                 elif h.dim == 2:
-                    pprint(f"\nError creating hist {h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}\n")
-                    self.errors[f"{h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}"]=error
+                    pprint(
+                        f"\nError creating hist {h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}\n"
+                    )
+                    self.errors[f"{h.collection_name}/{h.var_name}_vs_{h.collection_name2}/{h.var_name2}"] = error
                 print(error)
-                #import traceback
-                #print(traceback.format_exc())
-
-
+                # import traceback
+                # print(traceback.format_exc())
 
     def hist_report(self):
-        n_errors=len(self.errors)
-        if n_errors>0:
+        n_errors = len(self.errors)
+        if n_errors > 0:
             pprint(f"\n{n_errors} errors occurred while creating the histograms")
             for hist in self.errors:
                 pprint(f"{hist}: {self.errors[hist]}")

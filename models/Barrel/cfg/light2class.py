@@ -1,33 +1,39 @@
+import pathlib
+
 import awkward as ak
 import numpy as np
 import xgboost as xgb
 
-from cfg.functions.matching import match_obj_to_couple, match_obj_to_obj, match_to_gen
+from cfg.functions.matching import elliptic_match, match_to_gen
 from cfg.functions.utils import set_name
 from python.hist_struct import Hist
 from python.inference import xgb_wrapper
 
+ellipse = [[0.03, 0.3]]
 BarrelEta = 1.479
 model=xgb.Booster()
-model.load_model("/data/pviscone/PhD-notes/submodules/NanoHistDump/models/BDT_noWeight/131Xv3/BDT_noWeight_131Xv3.json")
 
-cryclu_path="CryClu/"
-tk_path="Tk/"
-couple_path=""
-features_minbias=[
-    cryclu_path+"standaloneWP",
-    cryclu_path+"showerShape",
-    cryclu_path+"isolation",
-    tk_path+"hitPattern",
-    tk_path+"nStubs",
-    tk_path+"chi2Bend",
-    tk_path+"chi2RPhi",
-    tk_path+"chi2RZ",
-    couple_path+"dEtaCryClu",
-    couple_path+"dPhiCryClu",
-    couple_path+"dPtCryClu",
+classes=2
+
+path=pathlib.Path(__file__).parent.parent.resolve().joinpath(f"light{classes}_131Xv3.json")
+model.load_model(path)
+
+
+features=[
+    "CryClu_pt",
+    "CryClu_ss",
+    "CryClu_relIso",
+    "CryClu_standaloneWP",
+    "CryClu_looseL1TkMatchWP",
+    "Tk_chi2RPhi",
+    "Tk_PtFrac",
+    "PtRatio",
+    "nMatch",
+    "abs_dEta",
+    "abs_dPhi",
 ]
-features=["CryCluGenMatch/"+feat if feat.startswith("CryClu/") else feat for feat in features_minbias]
+
+features_signal=["CryCluGenMatch_"+feat if feat.startswith("CryClu") else feat for feat in features]
 
 
 def define(events, sample_name):
@@ -37,24 +43,24 @@ def define(events, sample_name):
     mask_tight_ele = 0b0010
     events["TkEle","IDTightEle"] = np.bitwise_and(events["TkEle"].hwQual, mask_tight_ele) > 0
     events["TkEle"]=events.TkEle[events.TkEle.IDTightEle]
-    events["CryClu","showerShape"] = events.CryClu.e2x5/events.CryClu.e5x5
-    if sample_name == "MinBias":
-        #events = events[:40000]
+    events["CryClu","ss"] = events.CryClu.e2x5/events.CryClu.e5x5
+    events["CryClu","relIso"] = events.CryClu.isolation/events.CryClu.pt
 
-        events["Tk", "isReal"] = 2
+    if "MinBias" in sample_name:
+
         events = events[ak.num(events.GenEle) == 0]
 
-        events["TkCryCluMatch"] = match_obj_to_obj(
-            events.CryClu, events.Tk, etaphi_vars=(("eta", "phi"), ("caloEta", "caloPhi")),nested=True
+        events["TkCryCluMatch"] = elliptic_match(
+            events.CryClu, events.Tk, etaphi_vars=[["eta", "phi"], ["caloEta", "caloPhi"]], ellipse=ellipse
         )
-        events["TkCryCluMatch", "dEtaCryClu"] = events["TkCryCluMatch", "dEta"]
-        events["TkCryCluMatch", "dPhiCryClu"] = events["TkCryCluMatch", "dPhi"]
-        events["TkCryCluMatch", "dPtCryClu"] = events["TkCryCluMatch", "dPt"]
-        events["TkCryCluMatch","BDTscore"]=xgb_wrapper(model, events["TkCryCluMatch"],features_minbias,nested=True,layout_template=events.TkCryCluMatch.dPtCryClu.layout)
+        events["TkCryCluMatch","Tk","PtFrac"] = events.TkCryCluMatch.Tk.pt/ak.sum(events.TkCryCluMatch.Tk.pt,axis=2)
+
+        events["TkCryCluMatch","nMatch"]=ak.num(events.TkCryCluMatch.Tk.pt,axis=2)
+
+        events["TkCryCluMatch","BDTscore"]=xgb_wrapper(model, events["TkCryCluMatch"],features,nested=True,layout_template=events.TkCryCluMatch.PtRatio.layout)
 
         maxbdt_mask=ak.argmax(events["TkCryCluMatch"].BDTscore,axis=2,keepdims=True)
         events["TkCryCluMatch"]=ak.flatten(events["TkCryCluMatch"][maxbdt_mask],axis=2)
-
 
 
     else:
@@ -64,7 +70,8 @@ def define(events, sample_name):
 
         #!-------------------CryClu-Gen Matching-------------------!#
         events["CryCluGenMatch"] = match_to_gen(
-            events.GenEle, events.CryClu, etaphi_vars=(("caloeta", "calophi"), ("eta", "phi")),nested=True)
+            events.GenEle, events.CryClu, etaphi_vars=(("caloeta", "calophi"), ("eta", "phi")), nested=True
+        )
 
         mindpt_mask=ak.argmin(np.abs(events["CryCluGenMatch"].dPt),axis=2,keepdims=True)
 
@@ -75,11 +82,18 @@ def define(events, sample_name):
 
         #!-------------------Tk-CryClu-Gen Matching-------------------!#
 
-        events["TkCryCluGenMatch"] = match_obj_to_couple(
-            events.Tk, events.CryCluGenMatch, "CryClu", etaphi_vars=(("caloEta", "caloPhi"), ("eta", "phi")),nested=True
+        events["TkCryCluGenMatch"] = elliptic_match(
+            events.CryCluGenMatch,
+            events.Tk,
+            etaphi_vars=[["CryClu/eta", "CryClu/phi"], ["caloEta", "caloPhi"]],
+            ellipse=ellipse,
         )
 
-        events["TkCryCluGenMatch","BDTscore"]=xgb_wrapper(model, events["TkCryCluGenMatch"],features,nested=True,layout_template=events.TkCryCluGenMatch.dPtCryClu.layout)
+        events["TkCryCluGenMatch","Tk","PtFrac"] = events.TkCryCluGenMatch.Tk.pt/ak.sum(events.TkCryCluGenMatch.Tk.pt,axis=2)
+
+        events["TkCryCluGenMatch","nMatch"]=ak.num(events.TkCryCluGenMatch.Tk.pt,axis=2)
+
+        events["TkCryCluGenMatch","BDTscore"]=xgb_wrapper(model, events["TkCryCluGenMatch"],features_signal,nested=True,layout_template=events.TkCryCluGenMatch.PtRatio.layout)
 
 
         #!-------------------BDT selection-------------------!#
@@ -94,8 +108,8 @@ def define(events, sample_name):
         mindpt_mask=ak.argmin(np.abs(events["TkEleGenMatch"].dPt),axis=2,keepdims=True)
         events["TkEleGenMatch"] = ak.flatten(events["TkEleGenMatch"][mindpt_mask],axis=2)
 
-        events["TkCryCluGenMatchReal"]=events["TkCryCluGenMatch"][events.TkCryCluGenMatch.Tk.isReal==1]
-        events["TkCryCluGenMatchFake"]=events["TkCryCluGenMatch"][events.TkCryCluGenMatch.Tk.isReal!=1]
+        #events["TkCryCluGenMatchReal"]=events["TkCryCluGenMatch"][events.TkCryCluGenMatch.Tk.isReal==1]
+        #events["TkCryCluGenMatchFake"]=events["TkCryCluGenMatch"][events.TkCryCluGenMatch.Tk.isReal!=1]
 
     return events
 
@@ -105,7 +119,8 @@ bdt_bins = np.linspace(0,1.01,102)
 
 hists = [#signal
         Hist("TkCryCluGenMatch","BDTscore","TkCryCluGenMatch/CryCluGenMatch/GenEle","pt",bins=[bdt_bins,pt_bins,pt_bins],additional_axes=[["TkCryCluGenMatch/CryCluGenMatch/CryClu","pt"]]),
-        Hist("TkCryCluGenMatch","BDTscore","TkCryCluGenMatch/CryCluGenMatch/GenEle","eta",bins=[bdt_bins,eta_bins,pt_bins],additional_axes=[["TkCryCluGenMatch/CryCluGenMatch/CryClu","pt"]]),
+        Hist("TkCryCluGenMatch","BDTscore","TkCryCluGenMatch/CryCluGenMatch/GenEle","eta",bins=[bdt_bins,eta_bins, pt_bins],additional_axes=[["TkCryCluGenMatch/CryCluGenMatch/CryClu","pt"]]),
+        Hist("CryCluGenMatch/GenEle","pt",bins=pt_bins),
 
         Hist("TkCryCluGenMatch/CryCluGenMatch/GenEle","pt",bins=pt_bins),
         Hist("TkCryCluGenMatch/CryCluGenMatch/GenEle","eta",bins=eta_bins),
@@ -127,6 +142,8 @@ hists = [#signal
         #TkEle
         Hist("TkEle","pt",bins=pt_bins,fill_mode="rate_vs_ptcut"),
 
+        #CryClu
+        Hist("CryClu","pt",bins=pt_bins,fill_mode="rate_vs_ptcut"),
 
 
     ]

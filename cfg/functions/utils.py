@@ -8,16 +8,17 @@ def add_collection(events, name):
 def get_name(arr):
     try:
         if "name" not in arr._layout.content.parameters:
-            return arr._layout.content.__repr__().split("<parameter name='collection_name'>'")[1].split("'</parameter>")[0]
+            return (
+                arr._layout.content.__repr__().split("<parameter name='collection_name'>'")[1].split("'</parameter>")[0]
+            )
         else:
             return arr._layout.content.parameters["name"]
     except:
         return arr._layout.__repr__().split("<parameter name='collection_name'>'")[1].split("'</parameter>")[0]
 
+
 def set_name(arr, name):
     arr._layout.content.parameters["name"] = name
-
-
 
 
 def builders(n=1):
@@ -32,13 +33,13 @@ def builders(n=1):
     return decorator
 
 
-def cartesian(obj1, obj2,nested=False):
+def cartesian(obj1, obj2, nested=False):
     name1 = get_name(obj1)
     name2 = get_name(obj2)
 
-    cart = ak.cartesian([obj1, obj2],nested=nested)
+    cart = ak.cartesian([obj1, obj2], nested=nested)
     cart = ak.zip({name1: cart["0"], name2: cart["1"]})
-    argcart = ak.argcartesian([obj1, obj2],nested=nested)
+    argcart = ak.argcartesian([obj1, obj2], nested=nested)
 
     cart[name1, "idx"] = argcart["0"]
     cart[name2, "idx"] = argcart["1"]

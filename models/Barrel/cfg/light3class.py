@@ -1,3 +1,10 @@
+#%%
+
+
+#%%
+
+import pathlib
+
 import awkward as ak
 import numpy as np
 import xgboost as xgb
@@ -10,31 +17,24 @@ from python.inference import xgb_wrapper
 ellipse = [[0.03, 0.3]]
 BarrelEta = 1.479
 model=xgb.Booster()
-model.load_model("/afs/cern.ch/work/p/pviscone/NanoHistDump/models/flat3class/flat3class_131Xv3.json")
+
+classes=3
+path=pathlib.Path(__file__).parent.parent.resolve().joinpath(f"light{classes}_131Xv3.json")
+model.load_model(path)
 
 
 features=[
     "CryClu_pt",
     "CryClu_ss",
     "CryClu_relIso",
-    "CryClu_isIso",
-    "CryClu_isSS",
-    "CryClu_isLooseTkIso",
-    "CryClu_isLooseTkSS",
-    "CryClu_brems",
     "CryClu_standaloneWP",
     "CryClu_looseL1TkMatchWP",
-    "Tk_hitPattern",
-    #"Tk_pt",
-    "Tk_nStubs",
-    "Tk_chi2Bend",
-    "Tk_chi2RZ",
     "Tk_chi2RPhi",
     "Tk_PtFrac",
-    "dEta",
-    "dPhi",
     "PtRatio",
-    "nMatch"
+    "nMatch",
+    "abs_dEta",
+    "abs_dPhi",
 ]
 
 features_signal=["CryCluGenMatch_"+feat if feat.startswith("CryClu") else feat for feat in features]
@@ -50,7 +50,7 @@ def define(events, sample_name):
     events["CryClu","ss"] = events.CryClu.e2x5/events.CryClu.e5x5
     events["CryClu","relIso"] = events.CryClu.isolation/events.CryClu.pt
 
-    if sample_name == "MinBias":
+    if "MinBias" in sample_name:
 
         events = events[ak.num(events.GenEle) == 0]
 
