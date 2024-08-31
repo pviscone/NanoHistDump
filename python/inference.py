@@ -3,13 +3,14 @@ import numpy as np
 import xgboost as xgb
 
 
-def xgb_wrapper(model, events, features, nested=False, layout_template=None):
+def xgb_wrapper(model, events, features=None, layout_template=None):
     if isinstance(model, str):
         model_json = model
         model = xgb.Booster()
         model.load_model(model_json)
 
     if features is None:
+        print("Using default features from model. Things could go wrong.")
         features = model.feature_names
 
     for idx, feature in enumerate(features):
@@ -23,6 +24,7 @@ def xgb_wrapper(model, events, features, nested=False, layout_template=None):
             array = np.abs(events[*(feature.split("_"))])
         else:
             array = events[*(feature.split("_"))]
+        nested = True if array.ndim > 2 else False
         if nested:
             array = ak.flatten(array)
         array=ak.drop_none(array)

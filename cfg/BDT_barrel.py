@@ -9,8 +9,7 @@ from python.inference import xgb_wrapper
 
 ellipse = [[0.03, 0.3]]
 BarrelEta = 1.479
-model = xgb.Booster()
-model.load_model("/afs/cern.ch/work/p/pviscone/NanoHistDump/models/flatBDT/light/light3_131Xv3.json")
+model = "/afs/cern.ch/work/p/pviscone/NanoHistDump/models/flatBDT/light/light3_131Xv3.json"
 
 
 features = [
@@ -53,7 +52,10 @@ def define(events, sample_name):
         events["TkCryCluMatch", "nMatch"] = ak.num(events.TkCryCluMatch.Tk.pt, axis=2)
 
         events["TkCryCluMatch", "BDTscore"] = xgb_wrapper(
-            model, events["TkCryCluMatch"], features, nested=True, layout_template=events.TkCryCluMatch.PtRatio.layout
+            model,
+            events["TkCryCluMatch"],
+            features=features,
+            layout_template=events.TkCryCluMatch.PtRatio.layout
         )
 
         maxbdt_mask = ak.argmax(events["TkCryCluMatch"].BDTscore, axis=2, keepdims=True)
@@ -91,8 +93,7 @@ def define(events, sample_name):
         events["TkCryCluGenMatch", "BDTscore"] = xgb_wrapper(
             model,
             events["TkCryCluGenMatch"],
-            features_signal,
-            nested=True,
+            features=features_signal,
             layout_template=events.TkCryCluGenMatch.PtRatio.layout,
         )
 
