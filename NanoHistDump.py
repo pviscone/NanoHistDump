@@ -9,6 +9,7 @@ from python.sample import sample_generator
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
+
 @app.command()
 def NanoHistDump(
     config_file: str = typer.Option(..., "-f", "--file", help="specify the python configuration file"),
@@ -50,7 +51,7 @@ def NanoHistDump(
             f"------------------------- #{idx+1}/{len(dataset['samples'])} {sample.sample_name}-------------------------"
         )
         pprint(f"nevents: {sample.nevents}")
-        sample.events=cfg.define(sample.events, sample.sample_name)
+        sample.events = cfg.define(sample.events, sample.sample_name)
         sample.create_outfile(config_file.split("/")[-1].split(".py")[0], dataset["dataset"]["out_dir"])
         sample.add_hists(cfg.get_hists(sample.sample_name))
         sample.hist_report()
@@ -58,5 +59,4 @@ def NanoHistDump(
 
 if __name__ == "__main__":
     app()
-    #NanoHistDump(config_file="cfg/new_example.py", dataset_file="datasets/131Xv3.yaml",samples="DoubleElectrons",nevents=1000,out_dir="prova")
-
+    # NanoHistDump(config_file="cfg/new_example.py", dataset_file="datasets/131Xv3.yaml",samples="DoubleElectrons",nevents=1000,out_dir="prova")

@@ -94,6 +94,8 @@ dtest.set_weight(w_test*2) """
 save_model = f"light{classes}_131Xv3.json"
 save_model = False
 load = False
+
+
 def train(dtrain, dtest, save=False):
     params2 = {
         "tree_method": "hist",
@@ -101,10 +103,10 @@ def train(dtrain, dtest, save=False):
         "learning_rate": 0.45,
         "lambda": 1500,
         "alpha": 1500,
-        #"colsample_bytree":0.8,
+        # "colsample_bytree":0.8,
         "subsample": 0.8,
         # "gamma":5,
-        "min_split_loss":5,
+        "min_split_loss": 5,
         "min_child_weight": 80,
         "objective": "binary:logistic",
         "eval_metric": "logloss",
@@ -118,7 +120,7 @@ def train(dtrain, dtest, save=False):
         # "colsample_bytree":0.9,
         "subsample": 0.8,
         # "gamma":5,
-        "min_split_loss":5,
+        "min_split_loss": 5,
         "min_child_weight": 80,
         "objective": "multi:softprob",
         "num_class": classes,

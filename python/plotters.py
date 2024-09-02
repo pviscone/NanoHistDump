@@ -135,7 +135,7 @@ class BasePlotter:
 
         self.markers = ["v", "^", "X", "P", "d", "*", "p", "o"]
         self.markers_copy = self.markers.copy()
-        self.rebin=Rebin(rebin)
+        self.rebin = Rebin(rebin)
 
     def add_text(self, *args, **kwargs):
         self.ax.text(*args, **kwargs)
@@ -187,7 +187,7 @@ class TH1(BasePlotter):
 
     @merge_kwargs()
     def add(self, hist, **kwargs):
-        hist=hist[self.rebin]
+        hist = hist[self.rebin]
         hep.histplot(hist, ax=self.ax, clip_on=True, **kwargs)
         sys.stderr = open(os.devnull, "w")
         self.ax.legend()
@@ -203,7 +203,7 @@ class TH2(BasePlotter):
 
     @merge_kwargs()
     def add(self, hist, **kwargs):
-        hist=hist[self.rebin]
+        hist = hist[self.rebin]
         if self.zlog:
             kwargs["norm"] = colors.LogNorm(vmin=self.zlim[0], vmax=self.zlim[1])
         hep.hist2dplot(hist, ax=self.ax, **kwargs)
@@ -219,8 +219,8 @@ class TEfficiency(BasePlotter):
 
     @merge_kwargs()
     def add(self, num, den, **kwargs):
-        num=num[self.rebin]
-        den=den[self.rebin]
+        num = num[self.rebin]
+        den = den[self.rebin]
         num = num.to_numpy()
         edges = num[1]
         num = num[0]
@@ -242,18 +242,16 @@ class TEfficiency(BasePlotter):
         if isinstance(ptedges_thr, Iterable):
             thr_list = ptedges_thr[1]
             pt_edges = ptedges_thr[0]
-            hist=Hist(numhist3d.axes[1])
-            for thr,(minpt,maxpt) in zip(thr_list,pairwise(pt_edges)):
-                integrated=numhist3d.integrate(2,loc(minpt),loc(maxpt))
-                temp_h=integrated.integrate(0,loc(thr),None)
-                hist+=temp_h
-                self.ax.axvline(minpt,color="red",linestyle="--",linewidth=1.25,zorder=-2,alpha=0.6)
+            hist = Hist(numhist3d.axes[1])
+            for thr, (minpt, maxpt) in zip(thr_list, pairwise(pt_edges)):
+                integrated = numhist3d.integrate(2, loc(minpt), loc(maxpt))
+                temp_h = integrated.integrate(0, loc(thr), None)
+                hist += temp_h
+                self.ax.axvline(minpt, color="red", linestyle="--", linewidth=1.25, zorder=-2, alpha=0.6)
         elif isinstance(ptedges_thr, Number):
-            hist = numhist3d.integrate(2).integrate(0,loc(thr),None)
+            hist = numhist3d.integrate(2).integrate(0, loc(thr), None)
 
         return self.add(hist, den, **kwargs)
-
-
 
 
 class TRate(BasePlotter):
@@ -262,7 +260,7 @@ class TRate(BasePlotter):
 
     @merge_kwargs(markeredgecolor="black", markersize=10)
     def add(self, hist, **kwargs):
-        hist=hist[self.rebin]
+        hist = hist[self.rebin]
         centers = hist.axes[0].centers
         values = hist.values()
         if "marker" not in kwargs:

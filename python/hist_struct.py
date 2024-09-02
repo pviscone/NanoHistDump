@@ -1,10 +1,11 @@
-import awkward as ak
-import hist
-from rich import print as pprint
-import numpy as np
 from itertools import pairwise
 
-from python.THaxisUtils import auto_axis, auto_range, split_and_flat, split
+import awkward as ak
+import hist
+import numpy as np
+from rich import print as pprint
+
+from python.THaxisUtils import auto_axis, auto_range, split, split_and_flat
 
 
 class Hist:
@@ -145,7 +146,7 @@ class Hist:
             freq_x_bx = 2760.0 * 11246 / 1000
             pt = data[0]
             maxpt_mask = ak.argmax(pt, axis=1, keepdims=True)
-            additional_data = [array[maxpt_mask] for array in data[1:]]
+            additional_data = [ak.flatten(ak.drop_none(array[maxpt_mask])) for array in data[1:]]
             maxpt = ak.flatten(ak.drop_none(pt[maxpt_mask]))
             for thr, pt_bin_center in zip(self.hist_obj.axes[0].edges, self.hist_obj.axes[0].centers):
                 self.hist_obj.fill(pt_bin_center, *additional_data, weight=ak.sum(maxpt >= thr))
@@ -159,6 +160,7 @@ class Hist:
         elif self.fill_mode == "rate_pt_vs_score":
             # Used for computing rate on objects with a score
             # data = [online pt, score , ...]
+            assert self.dim > 2, "rate_pt_vs_score mode requires at least 2 variables"
             data = [split(events, var_path) for var_path in self.var_paths]
             n_ev = len(events)
             freq_x_bx = 2760.0 * 11246 / 1000
@@ -172,7 +174,7 @@ class Hist:
                 maxpt_mask = ak.argmax(pt[score_mask], axis=1, keepdims=True)
                 maxpt = ak.flatten(pt[score_mask][maxpt_mask])
 
-                additional_data = [array[score_mask][maxpt_mask] for array in data[2:]]
+                additional_data = [ak.flatten(ak.drop_none(array[score_mask][maxpt_mask])) for array in data[2:]]
                 for pt_bin_center, (lowpt, highpt) in zip(
                     self.hist_obj.axes[0].centers, pairwise(self.hist_obj.axes[0].edges)
                 ):

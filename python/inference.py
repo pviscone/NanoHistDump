@@ -27,7 +27,7 @@ def xgb_wrapper(model, events, features=None, layout_template=None):
         nested = True if array.ndim > 2 else False
         if nested:
             array = ak.flatten(array)
-        array=ak.drop_none(array)
+        array = ak.drop_none(array)
         array = ak.flatten(array).to_numpy(allow_missing=False)[:, None]
         if idx == 0:
             matrix = array

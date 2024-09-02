@@ -196,8 +196,8 @@ class Sample:
                 pprint(f"\nError creating hist {h.var_paths}\n")
                 self.errors[f"{h.var_paths}"] = error
                 print(error)
-                #import traceback
-                #print(traceback.format_exc())
+                # import traceback
+                # print(traceback.format_exc())
 
     def hist_report(self):
         n_errors = len(self.errors)
