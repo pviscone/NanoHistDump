@@ -46,6 +46,12 @@ def NanoHistDump(
 
     cfg = importlib.import_module(config_file.split(".py")[0].replace("/", "."))
 
+    to_read=getattr(cfg, "to_read", None)
+    if to_read is not None:
+        rev={value:key for key,value in dataset["scheme"].items()}
+        dataset["scheme"]={rev[key]:key for key in to_read}
+
+
     for idx, sample in enumerate(sample_generator(dataset, nevents)):
         pprint(
             f"------------------------- #{idx+1}/{len(dataset['samples'])} {sample.sample_name}-------------------------"
