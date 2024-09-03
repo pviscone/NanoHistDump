@@ -9,6 +9,8 @@ from python.inference import xgb_wrapper
 ellipse = [[0.03, 0.3]]
 BarrelEta = 1.479
 model = "/afs/cern.ch/work/p/pviscone/NanoHistDump/models/Barrel/barrel2classes_131Xv3.json"
+conifer_model = "/afs/cern.ch/work/p/pviscone/NanoHistDump/models/Barrel/conifer_barrel2classes_131Xv3/my_prj.json"
+#conifer_model=None
 
 
 features = [
@@ -55,10 +57,11 @@ def define(events, sample_name):
 
         events["TkCryCluMatch", "nMatch"] = ak.num(events.TkCryCluMatch.Tk.pt, axis=2)
 
-        events["TkCryCluMatch", "BDTscore"] = xgb_wrapper(
+        events["TkCryCluMatch", "BDTscore"],events["TkCryCluMatch", "ConiferScore"]= xgb_wrapper(
             model,
             events["TkCryCluMatch"],
             features=features,
+            conifer_model=conifer_model,
             layout_template=events.TkCryCluMatch.PtRatio.layout
         )
 
@@ -95,10 +98,11 @@ def define(events, sample_name):
 
         events["TkCryCluGenMatch", "nMatch"] = ak.num(events.TkCryCluGenMatch.Tk.pt, axis=2)
 
-        events["TkCryCluGenMatch", "BDTscore"] = xgb_wrapper(
+        events["TkCryCluGenMatch", "BDTscore"],events["TkCryCluGenMatch", "ConiferScore"] = xgb_wrapper(
             model,
             events["TkCryCluGenMatch"],
             features=features_signal,
+            conifer_model=conifer_model,
             layout_template=events.TkCryCluGenMatch.PtRatio.layout,
         )
 
@@ -119,28 +123,42 @@ def define(events, sample_name):
 pt_bins = np.linspace(0, 120, 121)
 eta_bins = np.linspace(-2, 2, 50)
 bdt_bins = np.linspace(0, 1.01, 102)
+conifer_bins = np.linspace(-1,1.01,102)
 
 
 def get_hists(sample_name):
     hists = []
     if "MinBias" in sample_name:
         hists += [
-            Hist(
-                ["TkCryCluMatch/CryClu~pt", "TkCryCluMatch~BDTscore"],
-                bins=[pt_bins, bdt_bins],
-                fill_mode="rate_pt_vs_score",
-                name="TkCryCluMatch/rate_pt_vs_score",
-            ),
             Hist("TkCryCluMatch/CryClu~pt", bins=pt_bins),
-            Hist("TkCryCluMatch~BDTscore", bins=bdt_bins),
             # TkEle
             Hist("TkEle~pt", bins=pt_bins, fill_mode="rate_vs_ptcut"),
             # CryClu
             Hist("CryClu~pt", bins=pt_bins, fill_mode="rate_vs_ptcut"),
-        ]
+            # new tkele Rate
+            Hist("TkCryCluMatch/CryClu~pt", bins=pt_bins, fill_mode="rate_vs_ptcut"),
+            # XGB
+            Hist(
+                ["TkCryCluMatch/CryClu~pt", "TkCryCluMatch~BDTscore"],
+                bins=[pt_bins, bdt_bins],
+                fill_mode="rate_pt_vs_score",
+                name="TkCryCluMatch/rate_pt_vs_xgbscore",
+            ),
+            Hist("TkCryCluMatch~BDTscore", bins=bdt_bins),
+            # Conifer
+            Hist(
+                ["TkCryCluMatch/CryClu~pt", "TkCryCluMatch~ConiferScore"],
+                bins=[pt_bins, conifer_bins],
+                fill_mode="rate_pt_vs_score",
+                name="TkCryCluMatch/rate_pt_vs_coniferscore",
+            ),
+            Hist("TkCryCluMatch~ConiferScore", bins=conifer_bins),
 
+        ]
+    # signal
     else:
-        hists += [  # signal
+        hists += [
+            # XGB
             Hist(
                 [
                     "TkCryCluGenMatch~BDTscore",
@@ -148,7 +166,7 @@ def get_hists(sample_name):
                     "TkCryCluGenMatch/CryCluGenMatch/CryClu~pt",
                 ],
                 bins=[bdt_bins, pt_bins, pt_bins],
-                name="TkCryCluGenMatch/score_vs_genpt_vs_cryclupt",
+                name="TkCryCluGenMatch/xgbscore_vs_genpt_vs_cryclupt",
             ),
             Hist(
                 [
@@ -157,8 +175,32 @@ def get_hists(sample_name):
                     "TkCryCluGenMatch/CryCluGenMatch/CryClu~pt",
                 ],
                 bins=[bdt_bins, eta_bins, pt_bins],
-                name="TkCryCluGenMatch/score_vs_geneta_vs_cryclupt",
+                name="TkCryCluGenMatch/xgbscore_vs_geneta_vs_cryclupt",
             ),
+            Hist(["TkCryCluGenMatch~BDTscore", "TkCryCluGenMatch/Tk~isReal"], bins=[bdt_bins, np.array([0, 1, 2, 3])]),
+            Hist("TkCryCluGenMatch~BDTscore", bins=bdt_bins),
+            # Conifer
+            Hist(
+                [
+                    "TkCryCluGenMatch~ConiferScore",
+                    "TkCryCluGenMatch/CryCluGenMatch/GenEle~pt",
+                    "TkCryCluGenMatch/CryCluGenMatch/CryClu~pt",
+                ],
+                bins=[conifer_bins, pt_bins, pt_bins],
+                name="TkCryCluGenMatch/coniferscore_vs_genpt_vs_cryclupt",
+            ),
+            Hist(
+                [
+                    "TkCryCluGenMatch~ConiferScore",
+                    "TkCryCluGenMatch/CryCluGenMatch/GenEle~eta",
+                    "TkCryCluGenMatch/CryCluGenMatch/CryClu~pt",
+                ],
+                bins=[conifer_bins, eta_bins, pt_bins],
+                name="TkCryCluGenMatch/coniferscore_vs_geneta_vs_cryclupt",
+            ),
+            Hist("TkCryCluGenMatch~ConiferScore", bins=conifer_bins),
+
+            # Other
             Hist("CryCluGenMatch/GenEle~pt", bins=pt_bins),
             Hist("TkCryCluGenMatch/CryCluGenMatch/GenEle~pt", bins=pt_bins),
             Hist("TkCryCluGenMatch/CryCluGenMatch/GenEle~eta", bins=eta_bins),
@@ -168,8 +210,6 @@ def get_hists(sample_name):
             Hist("GenEle~eta", bins=eta_bins),
             Hist("TkEleGenMatch/GenEle~pt", bins=pt_bins),
             Hist("TkEleGenMatch/GenEle~eta", bins=eta_bins),
-            Hist(["TkCryCluGenMatch~BDTscore", "TkCryCluGenMatch/Tk~isReal"], bins=[bdt_bins, np.array([0, 1, 2, 3])]),
-            Hist("TkCryCluGenMatch~BDTscore", bins=bdt_bins),
             Hist("TkCryCluGenMatch/Tk~isReal", bins=np.array([0, 1, 2, 3])),
         ]
     return hists
