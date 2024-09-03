@@ -102,7 +102,7 @@ class Hist:
             self.name = name
 
     def add_hist(self, events) -> None:
-        if self.weight is not None:
+        if isinstance(self.weight, str):
             path = self.weight.split("/")
             self.weight = events[*path]
         pprint(f"Creating hist {self.var_paths}")
@@ -138,7 +138,8 @@ class Hist:
             # Used for normal histograms
             # Used in 3D for computing genmatch efficiency on objects with a score and WP depending on the online pt (score, genpt, onlinept)
             data = [split_and_flat(events, var_path) for var_path in self.var_paths]
-            self.hist_obj.fill(*data, weight=self.weight)
+            weight = ak.flatten(self.weight) if self.weight is not None else None
+            self.hist_obj.fill(*data, weight=weight)
 
         elif self.fill_mode == "rate_vs_ptcut":
             # Used for computing rate on objects without a score
