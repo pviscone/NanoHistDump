@@ -89,6 +89,7 @@ class Hist:
         variables = [var_path.split("~")[1] for var_path in self.var_paths]
 
         if name is None:
+            self.name_from_user=False
             if self.dim > 1:
                 base_path = "_vs_".join(collections)
                 base_path = base_path.replace("/", "_")
@@ -97,6 +98,7 @@ class Hist:
             else:
                 self.name = f"{collections[0]}/{variables[0]}"
         else:
+            self.name_from_user=True
             self.name = name
 
     def add_hist(self, events) -> None:
@@ -151,16 +153,17 @@ class Hist:
             for thr, pt_bin_center in zip(self.hist_obj.axes[0].edges, self.hist_obj.axes[0].centers):
                 self.hist_obj.fill(pt_bin_center, *additional_data, weight=ak.sum(maxpt >= thr))
             self.hist_obj.axes[0].label = "Online pT cut"
-            self.name = self.name.split("/", 1)[0] + "/rate_vs_ptcut"
-            if len(additional_data) > 0:
-                add_vars = [var.split("~")[1] for var in self.var_paths[1:]]
-                self.name += f"+{'_vs_'.join(add_vars)}"
+            if not self.name_from_user:
+                self.name = self.name.split("/", 1)[0] + "/rate_vs_ptcut"
+                if len(additional_data) > 0:
+                    add_vars = [var.split("~")[1] for var in self.var_paths[1:]]
+                    self.name += f"+{'_vs_'.join(add_vars)}"
             self.hist_obj = self.hist_obj * freq_x_bx / n_ev
 
         elif self.fill_mode == "rate_pt_vs_score":
             # Used for computing rate on objects with a score
             # data = [online pt, score , ...]
-            assert self.dim > 2, "rate_pt_vs_score mode requires at least 2 variables"
+            assert self.dim >= 2, "rate_pt_vs_score mode requires at least 2 variables"
             data = [split(events, var_path) for var_path in self.var_paths]
             n_ev = len(events)
             freq_x_bx = 2760.0 * 11246 / 1000
@@ -187,10 +190,11 @@ class Hist:
 
             self.hist_obj.axes[0].label = "Online pT cut"
             self.hist_obj.axes[1].label = "Score cut"
-            self.name = self.name.split("/", 1)[0] + "/rate_pt_vs_score"
-            if len(additional_data) > 0:
-                add_vars = [var.split("~")[1] for var in self.var_paths[2:]]
-                self.name += f"+{'_vs_'.join(add_vars)}"
+            if not self.name_from_user:
+                self.name = self.name.split("/", 1)[0] + "/rate_pt_vs_score"
+                if len(additional_data) > 0:
+                    add_vars = [var.split("~")[1] for var in self.var_paths[2:]]
+                    self.name += f"+{'_vs_'.join(add_vars)}"
             self.hist_obj = self.hist_obj * freq_x_bx / n_ev
 
         return self.hist_obj
