@@ -74,6 +74,19 @@ def filepath_loader(path_list):
             files_list.extend(glob.glob(os.path.join(path, "*.root")))
     yield from files_list
 
+def convert_to_hist(*hists):
+    if len(hists)>1:
+        res=[]
+        for h in hists:
+            if not isinstance(h, Hist):
+                res.append(h.to_hist())
+            else:
+                return res.append(h)
+        return res
+    else:
+        if not isinstance(hists[0], Hist):
+            return hists[0].to_hist()
+        return hists[0]
 
 class BasePlotter:
     def __init__(
@@ -187,6 +200,7 @@ class TH1(BasePlotter):
 
     @merge_kwargs()
     def add(self, hist, **kwargs):
+        hist=convert_to_hist(hist)
         hist = hist[self.rebin]
         hep.histplot(hist, ax=self.ax, clip_on=True, **kwargs)
         sys.stderr = open(os.devnull, "w")
@@ -203,6 +217,7 @@ class TH2(BasePlotter):
 
     @merge_kwargs()
     def add(self, hist, **kwargs):
+        hist=convert_to_hist(hist)
         hist = hist[self.rebin]
         if self.zlog:
             kwargs["norm"] = colors.LogNorm(vmin=self.zlim[0], vmax=self.zlim[1])
@@ -219,8 +234,8 @@ class TEfficiency(BasePlotter):
 
     @merge_kwargs()
     def add(self, num, den, **kwargs):
-        num = num[self.rebin]
-        den = den[self.rebin]
+        num = convert_to_hist(num)[self.rebin]
+        den = convert_to_hist(den)[self.rebin]
         num = num.to_numpy()
         edges = num[1]
         num = num[0]
@@ -240,6 +255,8 @@ class TEfficiency(BasePlotter):
     @merge_kwargs()
     def add_scoreCuts(self, numhist3d, den, ptedges_thr, **kwargs):
         if isinstance(ptedges_thr, Iterable):
+            numhist3d=convert_to_hist(numhist3d)
+            den=convert_to_hist(den)
             thr_list = ptedges_thr[1]
             pt_edges = ptedges_thr[0]
             hist = Hist(numhist3d.axes[1])
@@ -249,7 +266,7 @@ class TEfficiency(BasePlotter):
                 hist += temp_h
                 self.ax.axvline(minpt, color="red", linestyle="--", linewidth=1.25, zorder=-2, alpha=0.6)
         elif isinstance(ptedges_thr, Number):
-            hist = numhist3d.integrate(2).integrate(0, loc(thr), None)
+            hist = numhist3d.integrate(2).integrate(0, loc(ptedges_thr), None)
 
         return self.add(hist, den, **kwargs)
 
@@ -260,7 +277,7 @@ class TRate(BasePlotter):
 
     @merge_kwargs(markeredgecolor="black", markersize=10)
     def add(self, hist, **kwargs):
-        hist = hist[self.rebin]
+        hist = convert_to_hist(hist)[self.rebin]
         centers = hist.axes[0].centers
         values = hist.values()
         if "marker" not in kwargs:
@@ -276,6 +293,7 @@ class TRate(BasePlotter):
 
     @merge_kwargs(markeredgecolor="black", markersize=10)
     def add_scoreCuts(self, hist2d, ptedges_thr, **kwargs):
+        hist2d=convert_to_hist(hist2d)
         if ptedges_thr is not None:
             if isinstance(ptedges_thr, Iterable):
                 pt_edges = ptedges_thr[0]
