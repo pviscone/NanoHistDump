@@ -1,9 +1,11 @@
 import awkward as ak
 import numpy as np
 import xgboost as xgb
+import copy
+from scipy. special import softmax
 
 
-def xgb_wrapper(model, events, features=None, layout_template=None):
+def xgb_wrapper(model, events, features=None, layout_template=None, conifer_model= None):
     if isinstance(model, str):
         model_json = model
         model = xgb.Booster()
@@ -39,8 +41,18 @@ def xgb_wrapper(model, events, features=None, layout_template=None):
     if scores.ndim > 1:
         scores = 1 - scores[:, 0]
 
-    if nested:
+    if conifer_model:
+        import conifer
+        hlsmodel=conifer.model.load_model(conifer_model)
+        hlsmodel.compile()
+        hlspreds=hlsmodel.decision_function(dmatrix.get_data().toarray())
+        if hlspreds.ndim>1:
+            hlspreds = 1-softmax(hlspreds)[:,0]
+        else:
+            hlspreds=hlspreds/4
+        conifer_layout=copy.deepcopy(layout_template)
 
+    if nested:
         def recur(layout_template, arr):
             if "_content" in layout_template.__dir__():
                 layout_template._content = recur(layout_template._content, arr)
@@ -50,7 +62,14 @@ def xgb_wrapper(model, events, features=None, layout_template=None):
 
         recur(layout_template, ak.contents.NumpyArray(scores))
         awk_scores = ak.Array(layout_template)
+        if conifer_model:
+            recur(conifer_layout, ak.contents.NumpyArray(hlspreds))
+            conifer_scores= ak.Array(conifer_layout)
+
     else:
         raise NotImplementedError("Not implemented for nested==False")
 
-    return awk_scores
+    if conifer_model:
+        return awk_scores, conifer_scores
+    else:
+        return awk_scores, -1
