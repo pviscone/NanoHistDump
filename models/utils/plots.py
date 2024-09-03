@@ -211,12 +211,13 @@ def plot_best_pt_roc(
     labkey="label",
     ptkey="CryClu_pt",
     pt_bins=(0, 5, 10, 20, 30, 50, 150),
+    ids=["evId", "CryClu_id"],
     save=False,
     eff=False,
     thrs_to_select=False,
 ):
     new_data = data.astype(float)
-    new_data = new_data.groupby(["evId", "CryClu_id"]).max(score).reset_index()
+    new_data = new_data.groupby(ids).max(score).reset_index()
     ax = plot_pt_roc(
         new_data,
         score=score,
