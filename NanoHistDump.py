@@ -1,5 +1,6 @@
 import importlib
 import os
+import envs
 
 import typer
 import yaml
@@ -64,5 +65,6 @@ def NanoHistDump(
 
 
 if __name__ == "__main__":
+    envs.set_envs()
     app()
     # NanoHistDump(config_file="cfg/new_example.py", dataset_file="datasets/131Xv3.yaml",samples="DoubleElectrons",nevents=1000,out_dir="prova")
