@@ -17,10 +17,10 @@ def load_from_df(df, features, ptkey="CryClu_pt", label="label", weight="weight"
 
 
 def load_parquet(
-    filename, features, ptkey="CryClu_pt", label="label", weight="weight", label2=2, scaler=None, pca=False
+    filename, features, ptkey="CryClu_pt", oldptkey="CryClu_pt", label="label", weight="weight", label2=2, scaler=None, pca=False
 ):
     df = pd.read_parquet(filename)
-    df[ptkey] = df["CryClu_pt"]
+    df[ptkey] = df[oldptkey]
 
     if pca:
         X = df[features]
@@ -31,8 +31,8 @@ def load_parquet(
             df[features] = pca.transform(X)
 
     if scaler is not None:
-        if ptkey == "CryClu_pt":
-            raise ValueError("ptkey should not be CryClu_pt if you are scaling it")
+        if ptkey == oldptkey:
+            raise ValueError(f"ptkey should not be {oldptkey} if you are scaling it")
         df = scaler.apply(df)
 
     if pca:
