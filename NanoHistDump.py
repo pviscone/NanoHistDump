@@ -25,6 +25,7 @@ def NanoHistDump(
     ),
     out_dir: str = typer.Option(None, "-o", "--out_dir", help="override the output directory for the files"),
     nevents: int = typer.Option(None, "-n", "--nevents", help="number of events to process per sample (default all)"),
+    collections: str = typer.Option(None, "-c", "--collections", help="collections to be read. separate by commas"),
 ):
     def parse_yaml(filename):
         with open(filename) as stream:
@@ -47,7 +48,11 @@ def NanoHistDump(
 
     cfg = importlib.import_module(config_file.split(".py")[0].replace("/", "."))
 
-    to_read=getattr(cfg, "to_read", None)
+    if collections is not None:
+        to_read=collections.split(",")
+    else:
+        to_read=getattr(cfg, "to_read", None)
+
     if to_read is not None:
         rev={value:key for key,value in dataset["scheme"].items()}
         dataset["scheme"]={rev[key]:key for key in to_read}
