@@ -123,7 +123,7 @@ def define(events, sample_name):
 pt_bins = np.linspace(0, 120, 121)
 eta_bins = np.linspace(-2, 2, 50)
 bdt_bins = np.linspace(0, 1.01, 102)
-conifer_bins = np.linspace(-1,1.01,102)
+conifer_bins = np.linspace(-2,2.01,202)
 
 
 def get_hists(sample_name):
