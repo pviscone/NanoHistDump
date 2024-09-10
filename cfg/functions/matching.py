@@ -18,7 +18,7 @@ def delta_r(eta1, eta2, phi1, phi2):
     return np.sqrt(dphi**2 + deta**2)
 
 
-def elliptic_match(obj1, obj2, etaphi_vars, ellipse=None):
+def elliptic_match(obj1, obj2, etaphi_vars=[["eta","phi"],["eta","phi"]], ellipse=None):
     cart, name1, name2 = cartesian(obj1, obj2, nested=True)
 
     obj1_name = etaphi_vars[0][0].split("/")[:-1]
