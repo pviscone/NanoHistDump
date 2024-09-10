@@ -58,12 +58,16 @@ os.environ["XILINX_AP_INCLUDE"] = "/opt/Xilinx/Vitis_HLS/2023.1/include"
 os.environ["JSON_ROOT"] = "/afs/cern.ch/work/p/pviscone/conifer"
 
 #!----------------------CFG----------------------!#
-backend = "vivado"
-precision = "ap_fixed<30,19>"
+backend = "cpp"
+score_precision = "ap_fixed<12,4,AP_RND_CONV,AP_SAT>"
+input_precision = "ap_fixed<24,9,AP_RND_CONV,AP_SAT>"
+threshold_precision = "ap_fixed<24,9,AP_RND_CONV,AP_SAT>"
 if backend == "vivado":
     cfg = conifer.backends.xilinxhls.auto_config()
     cfg["XilinxPart"] = "xcvu13p-flga2577-2-e"
-    cfg["Precision"] = precision
+    cfg["input_precision"] = input_precision
+    cfg["threshold_precision"] = threshold_precision
+    cfg["score_precision"] = score_precision
 
 
 elif backend == "py":
@@ -71,7 +75,9 @@ elif backend == "py":
 
 elif backend == "cpp":
     cfg = conifer.backends.cpp.auto_config()
-    cfg["Precision"] = precision
+    cfg["input_precision"] = input_precision
+    cfg["threshold_precision"] = threshold_precision
+    cfg["score_precision"] = score_precision
 
 cfg["OutputDir"] = f"conifer_{model.replace('.json', '')}"
 
