@@ -131,35 +131,35 @@ class Hist:
             self._add_ax(events, var_path, bins=self.bins[idx], hist_range=self.hist_range[idx])
             for idx, var_path in enumerate(self.var_paths)
         ]
-        self.hist_obj = hist.Hist(*axes, storage=hist.storage.Double())
+        self.hist_obj = hist.Hist(*axes, storage=hist.storage.Weight())
 
     def fill(self, events):
         if self.fill_mode == "normal":
             # Used for normal histograms
             # Used in 3D for computing genmatch efficiency on objects with a score and WP depending on the online pt (score, genpt, onlinept)
-            data = [ak.ravel(split_and_flat(events, var_path)) for var_path in self.var_paths]
+            data = [split_and_flat(events, var_path) for var_path in self.var_paths]
             weight = ak.ravel(self.weight) if self.weight is not None else None
             self.hist_obj.fill(*data, weight=weight)
 
         elif self.fill_mode == "rate_vs_ptcut":
+            freq_x_bx = 2760.0 * 11246 / 1000
             # Used for computing rate on objects without a score
             # data = [ pt, ...]
             data = [split(events, var_path) for var_path in self.var_paths]
             n_ev = len(events)
-            freq_x_bx = 2760.0 * 11246 / 1000
+
             pt = data[0]
             maxpt_mask = ak.argmax(pt, axis=1, keepdims=True)
             additional_data = [ak.flatten(ak.drop_none(array[maxpt_mask])) for array in data[1:]]
-            maxpt = ak.flatten(ak.drop_none(pt[maxpt_mask]))
+            maxpt = ak.drop_none(ak.ravel(pt[maxpt_mask]))
             for thr, pt_bin_center in zip(self.hist_obj.axes[0].edges, self.hist_obj.axes[0].centers):
-                self.hist_obj.fill(pt_bin_center, *additional_data, weight=ak.sum(maxpt >= thr))
+                self.hist_obj.fill(np.array([pt_bin_center]*int(ak.sum(maxpt >= thr))), *additional_data,weight=freq_x_bx/n_ev)
             self.hist_obj.axes[0].label = "Online pT cut"
             if not self.name_from_user:
                 self.name = self.name.split("/", 1)[0] + "/rate_vs_ptcut"
                 if len(additional_data) > 0:
                     add_vars = [var.split("~")[1] for var in self.var_paths[1:]]
                     self.name += f"+{'_vs_'.join(add_vars)}"
-            self.hist_obj = self.hist_obj * freq_x_bx / n_ev
 
         elif self.fill_mode == "rate_pt_vs_score":
             # Used for computing rate on objects with a score
@@ -167,7 +167,6 @@ class Hist:
             assert self.dim >= 2, "rate_pt_vs_score mode requires at least 2 variables"
             data = [split(events, var_path) for var_path in self.var_paths]
             n_ev = len(events)
-            freq_x_bx = 2760.0 * 11246 / 1000
             pt = data[0]
             score = data[1]
 
@@ -176,17 +175,17 @@ class Hist:
             for score_idx, score_cut in enumerate(score_cuts):
                 score_mask = score > score_cut
                 maxpt_mask = ak.argmax(pt[score_mask], axis=1, keepdims=True)
-                maxpt = ak.flatten(pt[score_mask][maxpt_mask])
+                maxpt = ak.ravel(pt[score_mask][maxpt_mask])
 
-                additional_data = [ak.flatten(ak.drop_none(array[score_mask][maxpt_mask])) for array in data[2:]]
+                additional_data = [ak.drop_none(ak.ravel(array[score_mask][maxpt_mask])) for array in data[2:]]
                 for pt_bin_center, (lowpt, highpt) in zip(
                     self.hist_obj.axes[0].centers, pairwise(self.hist_obj.axes[0].edges)
                 ):
                     self.hist_obj.fill(
-                        pt_bin_center,
+                        np.array([pt_bin_center]*int(ak.sum(np.bitwise_and(maxpt >= lowpt, maxpt < highpt))),
                         score_centers[score_idx],
                         *additional_data,
-                        weight=ak.sum(np.bitwise_and(maxpt >= lowpt, maxpt < highpt)),
+                        ),
                     )
 
             self.hist_obj.axes[0].label = "Online pT cut"
@@ -196,6 +195,6 @@ class Hist:
                 if len(additional_data) > 0:
                     add_vars = [var.split("~")[1] for var in self.var_paths[2:]]
                     self.name += f"+{'_vs_'.join(add_vars)}"
-            self.hist_obj = self.hist_obj * freq_x_bx / n_ev
+
 
         return self.hist_obj
