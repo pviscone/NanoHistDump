@@ -1,0 +1,19 @@
+dataset:
+    input_dir: /eos/cms/store/group/phys_susy/SOS/DarkPhoton_130X_Run3/treeProduction_106X_setupSOS2023_LepGood/2023/
+    out_dir: /afs/cern.ch/work/p/pviscone/NanoHistDump/DPout
+    tree_name: Events
+    tag: 106X_setupSOS2023
+
+samples:
+    HAHM_M2:
+        input_sample_dir: HAHM_ZdToEE_M2.root
+
+    HAHM_M5:
+        input_sample_dir: HAHM_ZdToEE_M5.root
+
+    HAHM_M15:
+        input_sample_dir: HAHM_ZdToEE_M15.root
+
+scheme:
+    "LepGood": "Lep"
+    "GenPart": "GenPart"
