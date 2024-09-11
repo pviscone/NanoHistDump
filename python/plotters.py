@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 import numpy as np
 from cycler import cycler
-from hist import Hist, intervals, loc
+from hist import Hist, intervals, loc, storage
 from hist import rebin as Rebin
 from matplotlib import colors
 from rich import print as pprint
@@ -83,10 +83,13 @@ def convert_to_hist(*hists):
             else:
                 return res.append(h)
         return res
-    else:
-        if not isinstance(hists[0], Hist):
-            return hists[0].to_hist()
-        return hists[0]
+    if not isinstance(hists[0], Hist):
+        return hists[0].to_hist()
+    return hists[0]
+
+def set_palette(palette):
+    hep.styles.cms.CMS["axes.prop_cycle"] = cycler("color", palette)
+    hep.style.use(hep.style.CMS)
 
 class BasePlotter:
     def __init__(
@@ -228,13 +231,14 @@ class TH2(BasePlotter):
 
 
 class TEfficiency(BasePlotter):
-    def __init__(self, yerr=True, ylabel="Efficiency", step=True, fillerr=False, *args, **kwargs):
+    def __init__(self, yerr=True, xerr=False, ylabel="Efficiency", step=True, fillerr=False, *args, **kwargs):
         super().__init__(*args, ylabel=ylabel, **kwargs)
         self.yerr = yerr
+        self.xerr = xerr
         self.step = step
         self.fillerr = fillerr
 
-    @merge_kwargs(linewidth=3, errcapsize=2, errlinewidth=1, errzorder=-99, fillalpha=0.3)
+    @merge_kwargs(linewidth=3, markeredgecolor="Black", markersize=0, errcapsize=3, errlinewidth=2, errzorder=-99, fillalpha=0.3)
     def add(self, num, den, **kwargs):
         keys=list(kwargs.keys())
         err_kwargs = {key.split("err")[1]:kwargs.pop(key) for key in keys if key.startswith("err")}
@@ -247,6 +251,10 @@ class TEfficiency(BasePlotter):
         den = den.to_numpy()[0]
         centers = (edges[:-1] + edges[1:]) / 2
         eff = np.nan_to_num(num / den, 0)
+        if "marker" not in kwargs:
+            kwargs["marker"] = self.markers_copy.pop(0)
+            if len(self.markers_copy) == 0:
+                self.markers_copy = self.markers.copy()
         if self.step:
             self.ax.step(centers, eff, where="mid", **kwargs)
         else:
@@ -257,7 +265,8 @@ class TEfficiency(BasePlotter):
             if self.fillerr:
                 self.ax.fill_between(centers, eff-err[0], eff+err[1], color=self.ax.lines[-1].get_color(),**fill_kwargs)
             else:
-                self.ax.errorbar(centers, eff, yerr=err, fmt="none", color=self.ax.lines[-1].get_color(), **err_kwargs)
+                xerr = np.diff(edges) / 2 if (not self.step and self.xerr) else None
+                self.ax.errorbar(centers, eff, yerr=err, xerr=xerr, fmt="none", color=self.ax.lines[-1].get_color(), **err_kwargs)
 
         sys.stderr = open(os.devnull, "w")
         self.ax.legend()
@@ -270,7 +279,7 @@ class TEfficiency(BasePlotter):
             den=convert_to_hist(den)
             thr_list = ptedges_thr[1]
             pt_edges = ptedges_thr[0]
-            hist = Hist(numhist3d.axes[1])
+            hist = Hist(numhist3d.axes[1],storage=storage.Weight())
             for thr, (minpt, maxpt) in zip(thr_list, pairwise(pt_edges)):
                 integrated = numhist3d.integrate(2, loc(minpt), loc(maxpt))
                 temp_h = integrated.integrate(0, loc(thr), None)
@@ -283,8 +292,8 @@ class TEfficiency(BasePlotter):
 
 
 class TRate(BasePlotter):
-    def __init__(self, *args, yerr=True, fillerr=False, log="y", **kwargs):
-        super().__init__(*args, log=log, **kwargs)
+    def __init__(self, *args, yerr=True, fillerr=False, log="y", ylabel="Rate [kHz]", **kwargs):
+        super().__init__(*args, log=log, ylabel=ylabel, **kwargs)
         self.freq_x_bx = 2760.0 * 11246 / 1000
         self.yerr = yerr
         self.fillerr = fillerr
@@ -326,7 +335,7 @@ class TRate(BasePlotter):
             if isinstance(ptedges_thr, Iterable):
                 pt_edges = ptedges_thr[0]
                 thrs = ptedges_thr[1]
-                hist = Hist(hist2d.axes[0])
+                hist = Hist(hist2d.axes[0], storage=storage.Weight())
                 for thr, (minpt, maxpt) in zip(thrs, pairwise(pt_edges)):
                     mask = np.ones_like(hist2d.axes[0].centers)
                     idx_mask = np.bitwise_and(hist2d.axes[0].centers > minpt, hist2d.axes[0].centers < maxpt)
@@ -336,7 +345,7 @@ class TRate(BasePlotter):
             elif isinstance(ptedges_thr, Number):
                 hist = hist2d[:, loc(ptedges_thr)]
 
-        rate_hist = Hist(hist.axes[0])
+        rate_hist = Hist(hist.axes[0], storage=storage.Weight())
         for i in range(len(hist.values())):
             rate_hist[i] = hist.integrate(0, i, None)
 
