@@ -30,17 +30,20 @@ def auto_range(data, h, ax_name):
 
 
 def split(events, var_path):
-    # var_path = dir1/dir2~var
+    # var_path = dir1/dir2~var[idx]
+    idxs=re.findall(r'\[(\d+)\]',var_path)
+    idxs = [int(idx) for idx in idxs]
+    var_path = var_path.split("[")[0]
     collection_name = var_path.split("~")[0]
     var_name = var_path.split("~")[1]
     names = collection_name.split("/")
-    data = events[*names][var_name]
+    data = getattr(events[*names],var_name)
+    data = data[:,*idxs]
     return ak.drop_none(data)
 
 
 def split_and_flat(events, var_path):
     # var_path = dir1/dir2~var
     data = split(events, var_path)
-    if data.ndim > 1:
-        data = ak.flatten(data)
+    data = ak.ravel(data)
     return data
