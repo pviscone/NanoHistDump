@@ -36,7 +36,11 @@ for library in ["xgb", "conifer"]:
 
 
     pteff = TEfficiency(
-        name="pt_eff", xlabel="Gen $p_{T}$ [GeV]", xlim=(-5, 100), linewidth=5, rebin=5, lumitext=f"{library} Barrel PU200"
+        name="pt_eff",
+        xlabel="Gen $p_{T}$ [GeV]",
+        xlim=(-5, 100),
+        rebin=5,
+        lumitext=f"{library} Barrel PU200",
     )
     pteff.add(sig["CryCluGenMatch/GenEle/pt"], genpt, label="Standalone")
     pteff.add(sig["TkCryCluGenMatch/CryCluGenMatch/GenEle/pt"], genpt, label="New TkEle")
@@ -64,11 +68,9 @@ for library in ["xgb", "conifer"]:
         name="rate_vs_pt",
         xlabel="Online $p_T$ cut [GeV]",
         ylabel="Rate [kHz]",
-        log="y",
         xlim=(0, 100),
-        markersize=11,
         ylim=(1e-1, 5e4),
-        linewidth=5,
+        fillerr=True,
         lumitext=f"{library} Barrel PU200",
     )
     h2rate = minbias[f"TkCryCluMatch/rate_pt_vs_{library}score;1"].to_hist()
