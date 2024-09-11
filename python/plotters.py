@@ -228,12 +228,17 @@ class TH2(BasePlotter):
 
 
 class TEfficiency(BasePlotter):
-    def __init__(self, yerr=True, ylabel="Efficiency", *args, **kwargs):
+    def __init__(self, yerr=True, ylabel="Efficiency", step=True, fillerr=False, *args, **kwargs):
         super().__init__(*args, ylabel=ylabel, **kwargs)
         self.yerr = yerr
+        self.step = step
+        self.fillerr = fillerr
 
-    @merge_kwargs()
+    @merge_kwargs(linewidth=3, errcapsize=2, errlinewidth=1, errzorder=-99, fillalpha=0.3)
     def add(self, num, den, **kwargs):
+        keys=list(kwargs.keys())
+        err_kwargs = {key.split("err")[1]:kwargs.pop(key) for key in keys if key.startswith("err")}
+        fill_kwargs = {key.split("fill")[1]:kwargs.pop(key) for key in keys if key.startswith("fill")}
         num = convert_to_hist(num)[self.rebin]
         den = convert_to_hist(den)[self.rebin]
         num = num.to_numpy()
@@ -242,11 +247,17 @@ class TEfficiency(BasePlotter):
         den = den.to_numpy()[0]
         centers = (edges[:-1] + edges[1:]) / 2
         eff = np.nan_to_num(num / den, 0)
-        self.ax.step(centers, eff, where="mid", **kwargs)
+        if self.step:
+            self.ax.step(centers, eff, where="mid", **kwargs)
+        else:
+            self.ax.plot(centers, eff, **kwargs)
 
         if self.yerr:
             err = np.nan_to_num(intervals.ratio_uncertainty(num, den, "efficiency"), 0)
-            self.ax.errorbar(centers, eff, yerr=err, fmt="none", color=self.ax.lines[-1].get_color())
+            if self.fillerr:
+                self.ax.fill_between(centers, eff-err[0], eff+err[1], color=self.ax.lines[-1].get_color(),**fill_kwargs)
+            else:
+                self.ax.errorbar(centers, eff, yerr=err, fmt="none", color=self.ax.lines[-1].get_color(), **err_kwargs)
 
         sys.stderr = open(os.devnull, "w")
         self.ax.legend()
@@ -272,20 +283,37 @@ class TEfficiency(BasePlotter):
 
 
 class TRate(BasePlotter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, yerr=True, fillerr=False, log="y", **kwargs):
+        super().__init__(*args, log=log, **kwargs)
+        self.freq_x_bx = 2760.0 * 11246 / 1000
+        self.yerr = yerr
+        self.fillerr = fillerr
 
-    @merge_kwargs(markeredgecolor="black", markersize=10)
+    @merge_kwargs(markeredgecolor="black", markersize=7, linewidth=3, errcapsize=2, errlinewidth=1, errzorder=-99, fillalpha=0.3)
     def add(self, hist, **kwargs):
+        keys=list(kwargs.keys())
+        err_kwargs = {key.split("err")[1]:kwargs.pop(key) for key in keys if key.startswith("err")}
+        fill_kwargs = {key.split("fill")[1]:kwargs.pop(key) for key in keys if key.startswith("fill")}
         hist = convert_to_hist(hist)[self.rebin]
         centers = hist.axes[0].centers
         values = hist.values()
+        variances = hist.variances()
         if "marker" not in kwargs:
             kwargs["marker"] = self.markers_copy.pop(0)
             if len(self.markers_copy) == 0:
                 self.markers_copy = self.markers.copy()
 
-        self.ax.plot(centers, values, **kwargs)
+        n_ev=(values/variances)[0]*self.freq_x_bx
+        n_bin=(values**2/variances)
+        rate=values
+        self.ax.plot(centers, rate, **kwargs)
+        if self.yerr:
+            err = np.nan_to_num(intervals.ratio_uncertainty(n_bin, n_ev, "efficiency"), 0)*self.freq_x_bx
+            if self.fillerr:
+                self.ax.fill_between(centers, rate-err[0], rate+err[1], color=self.ax.lines[-1].get_color(),**fill_kwargs)
+            else:
+                xerr = np.diff(hist.axes[0].edges) / 2
+                self.ax.errorbar(centers, rate, yerr=err, xerr=xerr, fmt="none", color=self.ax.lines[-1].get_color(), **err_kwargs)
 
         sys.stderr = open(os.devnull, "w")
         self.ax.legend()
