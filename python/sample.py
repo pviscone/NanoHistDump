@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore", module="coffea.*")
 vector.register_awkward()
 
 
-def sample_generator(dataset_dict: dict, nevents: int | None = None):
+def sample_generator(dataset_dict: dict, nevents: int | None = None, debug: bool = False):
     """
     generator that loops over the samples in the dataset and yields a Sample object for each sample
 
@@ -42,6 +42,7 @@ def sample_generator(dataset_dict: dict, nevents: int | None = None):
             tree_name=dataset_dict["dataset"]["tree_name"],
             scheme_dict=dataset_dict["scheme"],
             nevents=nevents,
+            debug=debug,
         )
 
 
@@ -69,6 +70,7 @@ class Sample:
         scheme_dict: dict[str, str] | None = None,
         nevents: int | None = None,
         events: NanoEventsFactory | None = None,
+        debug: bool = False
     ):
         """
         _summary_
@@ -117,6 +119,7 @@ class Sample:
         self.tag = tag
         self.hist_file = None
         self.errors = {}
+        self.debug = debug
 
     @property
     def fields(self):
@@ -196,8 +199,9 @@ class Sample:
                 pprint(f"\nError creating hist {h.var_paths}\n")
                 self.errors[f"{h.var_paths}"] = error
                 print(error)
-                # import traceback
-                # print(traceback.format_exc())
+                if self.debug:
+                    import traceback
+                    print(traceback.format_exc())
 
     def hist_report(self):
         n_errors = len(self.errors)

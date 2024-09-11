@@ -26,6 +26,7 @@ def NanoHistDump(
     out_dir: str = typer.Option(None, "-o", "--out_dir", help="override the output directory for the files"),
     nevents: int = typer.Option(None, "-n", "--nevents", help="number of events to process per sample (default all)"),
     collections: str = typer.Option(None, "-c", "--collections", help="collections to be read. separate by commas"),
+    debug: bool = typer.Option(False, "-d", "--debug", help="print debug information"),
 ):
     def parse_yaml(filename):
         with open(filename) as stream:
@@ -58,7 +59,7 @@ def NanoHistDump(
         dataset["scheme"]={rev[key]:key for key in to_read}
 
 
-    for idx, sample in enumerate(sample_generator(dataset, nevents)):
+    for idx, sample in enumerate(sample_generator(dataset, nevents, debug)):
         pprint(
             f"------------------------- #{idx+1}/{len(dataset['samples'])} {sample.sample_name}-------------------------"
         )
