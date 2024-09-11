@@ -100,9 +100,11 @@ class Sample:
                 arr = dask_events[old_collection_name]
                 if nevents is not None:
                     arr = arr[:nevents]
-                arr = ak.with_name(arr.compute(), "Momentum4D")
-                arr._layout.content.parameters["collection_name"] = new_collection_name
-                events_dict[new_collection_name] = arr
+                events_dict[new_collection_name] = arr.persist()
+            for collection_name in events_dict:
+                arr = ak.with_name(events_dict[collection_name].compute(), "Momentum4D")
+                arr._layout.content.parameters["collection_name"] = collection_name
+                events_dict[collection_name] = arr
 
             self.events = ak.Array(events_dict, behavior=dask_events.behavior)
             if nevents is None:
