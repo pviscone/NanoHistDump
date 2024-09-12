@@ -42,9 +42,12 @@ def xgb_wrapper(model, events, features=None, layout_template=None, conifer_mode
         scores = 1 - scores[:, 0]
 
     if conifer_model:
-        import conifer
-        hlsmodel=conifer.model.load_model(conifer_model)
-        hlsmodel.compile()
+        if isinstance(conifer_model, str):
+            import conifer
+            hlsmodel=conifer.model.load_model(conifer_model)
+            hlsmodel.compile()
+        else:
+            hlsmodel=conifer_model
         hlspreds=hlsmodel.decision_function(dmatrix.get_data().toarray())
         if hlspreds.shape[1]>1:
             hlspreds = 1-softmax(hlspreds)[:,0]

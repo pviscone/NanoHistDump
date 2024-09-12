@@ -12,6 +12,10 @@ model = "/afs/cern.ch/work/p/pviscone/NanoHistDump/models/Barrel/barrel2classes_
 conifer_model = "/afs/cern.ch/work/p/pviscone/NanoHistDump/models/Barrel/conifer_barrel2classes_131Xv3/my_prj.json"
 #conifer_model=None
 
+if conifer_model:
+    import conifer
+    conifer_model=conifer.model.load_model(conifer_model)
+    conifer_model.compile()
 
 features = [
     "CryClu_pt",
