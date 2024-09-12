@@ -167,7 +167,7 @@ class Sample:
             return {field: self.events[field].fields for field in self.fields}
         return self.events[collection].fields
 
-    def create_outfile(self, cfg, path: str) -> None:
+    def create_outfile(self, cfg, path: str, suffix=False) -> None:
         """
         Create a root file to store the histograms
 
@@ -177,11 +177,14 @@ class Sample:
 
         """
         if self.hist_file is None:
-            self.hist_file = uproot.recreate(os.path.join(path, f"{cfg}_{self.sample_name}_{self.tag}.root"))
+            name= f"{cfg}_{self.sample_name}_{self.tag}"
+            if isinstance(suffix, int):
+                name = f"{name}_{suffix}"
+            self.hist_file = uproot.recreate(os.path.join(path, f"{name}.root"))
         else:
             print("Histogram already exists. Did nothing")
 
-    def add_hists(self, hists: list[Hist]) -> None:
+    def add_hists(self, hists: list[Hist], verbose=True) -> None:
         """
         Add histograms to the root file
 
@@ -194,7 +197,7 @@ class Sample:
             raise ValueError("No histogram created. Create one first")
         for h in hists:
             try:
-                to_add = h.add_hist(self.events)
+                to_add = h.add_hist(self.events,verbose=verbose)
                 self.hist_file[h.name] = to_add
 
             except Exception as error:
@@ -205,11 +208,12 @@ class Sample:
                     import traceback
                     print(traceback.format_exc())
 
-    def hist_report(self):
+    def hist_report(self, verbose=True):
         n_errors = len(self.errors)
         if n_errors > 0:
             pprint(f"\n{n_errors} errors occurred while creating the histograms")
             for hist in self.errors:
                 pprint(f"{hist}: {self.errors[hist]}")
         else:
-            pprint("\nAll histograms created successfully")
+            if verbose:
+                pprint("\nAll histograms created successfully")

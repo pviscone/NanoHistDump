@@ -101,12 +101,13 @@ class Hist:
             self.name_from_user=True
             self.name = name
 
-    def add_hist(self, events) -> None:
+    def add_hist(self, events, verbose=True) -> None:
         if isinstance(self.weight, str):
             path = self.weight.split("/")
             self.weight = events[*path]
-        pprint(f"Creating hist {self.var_paths}")
-        pprint(f"fill_mode: {self.fill_mode}\n")
+        if verbose:
+            pprint(f"Creating hist {self.var_paths}")
+            pprint(f"fill_mode: {self.fill_mode}\n")
         self.build_hist(events)
         return self.fill(events)
 
