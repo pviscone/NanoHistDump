@@ -100,7 +100,8 @@ def NanoHistDump(
             files = glob.glob(os.path.join(path, "*.root"))
             tmp_dir = os.path.abspath(os.path.join(out_dir, f"{sample_name}_tmp"))
             dataset_config["out_dir"] = tmp_dir
-            os.makedirs(dataset_config["out_dir"], exist_ok=True)
+            os.system(f"rm -rf {tmp_dir}")
+            os.makedirs(tmp_dir, exist_ok=True)
             file_splitting(
                 _run,
                 (sample_name, "file_path", dataset_config, schema, nevents, debug, config_file, "file_idx"),
