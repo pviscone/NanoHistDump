@@ -167,7 +167,7 @@ class Sample:
             return {field: self.events[field].fields for field in self.fields}
         return self.events[collection].fields
 
-    def create_outfile(self, cfg, path: str, suffix=False) -> None:
+    def create_outfile(self, cfg, path: str, suffix=None) -> None:
         """
         Create a root file to store the histograms
 

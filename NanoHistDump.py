@@ -13,7 +13,7 @@ from python.scheduler import file_splitting
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
 
-def _run(sample_name, path, dataset_config, schema, nevents, debug, config_file, idx=False):
+def _run(sample_name, path, dataset_config, schema, nevents, debug, config_file, idx=None):
     sample = Sample(
         sample_name,
         tag=dataset_config["tag"],
