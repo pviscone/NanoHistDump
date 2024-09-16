@@ -1,0 +1,23 @@
+dataset:
+    input_dir: /eos/cms/store/cmst3/group/susy/SOS/trees_displacedSOS_UL106X_120922/2018/
+    out_dir: /afs/cern.ch/work/p/pviscone/NanoHistDump/out
+    tree_name: Events
+    tag: 131Xv3Tc
+
+samples:
+    DoubleElectronsPU200:
+        input_sample_dir: DoubleElectron_FlatPt-1To100_PU200/FP/v131Xv3Tc
+
+    DoubleElectronsPU0:
+        input_sample_dir: DoubleElectron_FlatPt-1To100_PU0/FP/v131Xv3Td
+
+    MinBias:
+        input_sample_dir: NuGunAllEta_PU200/FP/v131Xv3Tc
+
+scheme:
+    "HGCal3DCl": "HGCalClu"
+    "CaloEGammaCrystalClustersGCT": "CryClu"
+    "GenEl": "GenEle"
+    "DecTkHGCal": "TkE"
+    "DecTkBarrel": "TkB"
+    "TkEleL2": "TkEle"
