@@ -27,10 +27,8 @@ def xgb_wrapper(model, events, features=None, layout_template=None, conifer_mode
         else:
             array = events[*(feature.split("_"))]
         nested = True if array.ndim > 2 else False
-        if nested:
-            array = ak.flatten(array)
         array = ak.drop_none(array)
-        array = ak.flatten(array).to_numpy(allow_missing=False)[:, None]
+        array = ak.ravel(array).to_numpy(allow_missing=False)[:, None]
         if idx == 0:
             matrix = array
         else:
@@ -70,7 +68,7 @@ def xgb_wrapper(model, events, features=None, layout_template=None, conifer_mode
             conifer_scores= ak.Array(conifer_layout)
 
     else:
-        raise NotImplementedError("Not implemented for nested==False")
+        raise NotImplementedError("Not implemented for array.ndim <= 2")
 
     if conifer_model:
         return awk_scores, conifer_scores

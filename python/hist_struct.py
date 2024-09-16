@@ -151,7 +151,7 @@ class Hist:
 
             pt = data[0]
             maxpt_mask = ak.argmax(pt, axis=1, keepdims=True)
-            additional_data = [ak.flatten(ak.drop_none(array[maxpt_mask])) for array in data[1:]]
+            additional_data = [ak.drop_none(ak.ravel(array[maxpt_mask])) for array in data[1:]]
             maxpt = ak.drop_none(ak.ravel(pt[maxpt_mask]))
             for thr, pt_bin_center in zip(self.hist_obj.axes[0].edges, self.hist_obj.axes[0].centers):
                 self.hist_obj.fill(np.array([pt_bin_center]*int(ak.sum(maxpt >= thr))), *additional_data,weight=freq_x_bx/n_ev)
