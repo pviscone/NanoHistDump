@@ -350,3 +350,5 @@ class TRate(BasePlotter):
             rate_hist[i] = hist.integrate(0, i, None)
 
         return self.add(rate_hist, **kwargs)
+
+#ADD THStack, THRatio, THPull, THResiduals
