@@ -108,8 +108,9 @@ def NanoHistDump(
                 files,
                 ncpu=ncpu,
             )
+            basepath=os.path.dirname(os.path.realpath(__file__))
             os.system(
-                f"hadd -fk {tmp_dir}/../{config_file.split('/')[-1].split('.py')[0]}_{sample_name}_{dataset_config['tag']}.root {tmp_dir}/*.root"
+                f"python {basepath}/python/hadd.py {tmp_dir}/../{config_file.split('/')[-1].split('.py')[0]}_{sample_name}_{dataset_config['tag']}.root {tmp_dir}/*.root"
             )
             os.system(f"rm -rf {tmp_dir}")
         else:
