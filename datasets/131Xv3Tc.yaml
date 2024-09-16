@@ -1,5 +1,5 @@
 dataset:
-    input_dir: /eos/cms/store/cmst3/group/susy/SOS/trees_displacedSOS_UL106X_120922/2018/
+    input_dir: /eos/cms/store/cmst3/group/l1tr/cerminar/l1teg/fp_ntuples
     out_dir: /afs/cern.ch/work/p/pviscone/NanoHistDump/out
     tree_name: Events
     tag: 131Xv3Tc
