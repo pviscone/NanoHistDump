@@ -43,9 +43,11 @@ acab_palette = (
     "#17becf",
 )
 
+ggplot_palette=('#348ABD','#E24A33', '#988ED5', '#777777', '#FBC15E', '#8EBA42', '#FFB5B8')
+
 hep.styles.cms.CMS["patch.linewidth"] = 2
 hep.styles.cms.CMS["lines.linewidth"] = 2
-hep.styles.cms.CMS["axes.prop_cycle"] = cycler("color", acab_palette)
+hep.styles.cms.CMS["axes.prop_cycle"] = cycler("color", ggplot_palette)
 hep.styles.cms.CMS["legend.frameon"] = True
 hep.styles.cms.CMS["figure.autolayout"] = True
 hep.style.use(hep.style.CMS)
