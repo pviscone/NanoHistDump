@@ -6,7 +6,7 @@ sys.path.append("..")
 import hist
 import uproot
 
-from python.plotters import TH1, TEfficiency
+from python.plotters import TH1, TEfficiency, TH2
 
 pu0 = uproot.open("../out/EEstudy_DoubleElectronsPU0_131Xv3Tc.root")
 
@@ -34,4 +34,15 @@ n = TH1(name="n", xlabel="n", ylabel="Density", lumitext="Endcap PU0", rebin=1, 
 n.add(pu0["n/HGCalCluGenMatch"], label="Cluster per Gen")
 n.add(pu0["n/HGCalCluTkGenMatch"], label="Tk per Cluster")
 # %%
-    
+from matplotlib.patches import Ellipse
+etaphi=TH2(name="etaphi",xlabel="$\Phi$",ylabel="$\eta$",lumitext="Endcap PU0",log="z")
+etaphi.add(pu0["HGCalCluTkGenMatch/dPhi_vs_dEta"])
+etaphi.ax.add_patch(Ellipse((0,0),0.7,0.04, color="red",fill=False))
+etaphi.ax.add_patch(Ellipse((0,0),0.1,0.1, color="red",fill=False))
+
+#%%
+
+etaphiselected=TH2(name="etaphiselected",xlabel="$\Phi$",ylabel="$\eta$",lumitext="Endcap PU0",log="z")
+etaphiselected.add(pu0["HGCalCluTkGenMatchSelected/dPhi_vs_dEta"])
+etaphiselected.ax.add_patch(Ellipse((0,0),0.7,0.04, color="red",fill=False))
+etaphiselected.ax.add_patch(Ellipse((0,0),0.1,0.1, color="red",fill=False))
