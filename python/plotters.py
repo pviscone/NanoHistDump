@@ -151,7 +151,10 @@ class BasePlotter:
 
         self.markers = ["v", "^", "X", "P", "d", "*", "p", "o"]
         self.markers_copy = self.markers.copy()
-        self.rebin = Rebin(rebin)
+        if isinstance(rebin, int):
+            self.rebin = Rebin(rebin)
+        else:
+            self.rebin = [Rebin(r) for r in rebin]
 
     def add_text(self, *args, **kwargs):
         self.ax.text(*args, **kwargs)
@@ -215,13 +218,13 @@ class TH1(BasePlotter):
 
 
 class TH2(BasePlotter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, rebin=[1,1], **kwargs):
+        super().__init__(*args, rebin=rebin, **kwargs)
 
     @merge_kwargs()
     def add(self, hist, **kwargs):
         hist=convert_to_hist(hist)
-        hist = hist[self.rebin]
+        hist = hist[*self.rebin]
         if self.zlog:
             kwargs["norm"] = colors.LogNorm(vmin=self.zlim[0], vmax=self.zlim[1])
         hep.hist2dplot(hist, ax=self.ax, **kwargs)
