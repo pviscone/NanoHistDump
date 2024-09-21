@@ -9,34 +9,33 @@ from python.THaxisUtils import auto_axis, auto_range, split, split_and_flat
 
 
 class Hist:
-    class Hist:
-        """
-        Class to define the histogram to be created. Contains metadata only. If the hist_range and bins are not specified
-        they will be computed automatically but the dask.compute() will be called before the creation of the histogram.
+    """
+    Class to define the histogram to be created. Contains metadata only. If the hist_range and bins are not specified
+    they will be computed automatically but the dask.compute() will be called before the creation of the histogram.
 
-        Attributes
-        ----------
-        name : str
-            Name of the hist. It defines the collection and the variable to be plotted. Syntax collection/var for 1D plots
-            and collection/var1_var2 for 2D plots.
-        hist_range : list[float,float] | list[list[float,float],list[float,float]], optional
-            Range of the histogram. Defaults to None (automatic range).
-        bins : int | list[int,int], optional
-            Binning. Defaults to None (automatic binning).
-        entire_sample : bool
-            True if the hist is for the entire sample.
-        entire_collection : bool
-            True if the hist is for the entire collection.
-        single_var : bool
-            True if the hist is for a single variable.
-        collection_name : str
-            Name of the collection.
-        var_name : str
-            Name of the variable.
-        dim : int
-            Dimension of the histogram (1D or 2D).
+    Attributes
+    ----------
+    name : str
+        Name of the hist. It defines the collection and the variable to be plotted. Syntax collection/var for 1D plots
+        and collection/var1_var2 for 2D plots.
+    hist_range : list[float,float] | list[list[float,float],list[float,float]], optional
+        Range of the histogram. Defaults to None (automatic range).
+    bins : int | list[int,int], optional
+        Binning. Defaults to None (automatic binning).
+    entire_sample : bool
+        True if the hist is for the entire sample.
+    entire_collection : bool
+        True if the hist is for the entire collection.
+    single_var : bool
+        True if the hist is for a single variable.
+    collection_name : str
+        Name of the collection.
+    var_name : str
+        Name of the variable.
+    dim : int
+        Dimension of the histogram (1D or 2D).
 
-        """
+    """
 
     def __init__(
         self,
@@ -46,6 +45,7 @@ class Hist:
         fill_mode="normal",
         weight=None,
         name=None,
+        func=None,
         **kwargs,
     ):
         """
@@ -63,9 +63,9 @@ class Hist:
         _fill_modes = ["normal", "rate_vs_ptcut", "rate_pt_vs_score"]
         assert fill_mode in _fill_modes, f"fill_mode must be one of {_fill_modes}"
 
-        if bins is None:
+        if bins is None and not isinstance(var_paths, str):
             bins = [None] * len(var_paths)
-        if hist_range is None:
+        if hist_range is None and not isinstance(var_paths, str):
             hist_range = [None] * len(var_paths)
 
         if isinstance(var_paths, str):
@@ -84,6 +84,7 @@ class Hist:
         self.kwargs = kwargs
 
         self.hist_obj = None
+        self.func = func
 
         collections = [var_path.split("~")[0] for var_path in self.var_paths]
         variables = [var_path.split("~")[1] for var_path in self.var_paths]
@@ -117,10 +118,10 @@ class Hist:
             axis = hist.axis.Variable(bins, name=ax_name)
         elif hist_range is None and bins is None:
             data = split_and_flat(events, ax_name)
-            axis = auto_axis(data, self)
+            axis = auto_axis(data, self, ax_name)
         elif hist_range is None and bins is not None:
             data = split_and_flat(events, ax_name)
-            axis = auto_range(data, self)
+            axis = auto_range(data, self, ax_name)
         elif hist_range is not None and bins is None:
             axis = hist.axis.Regular(50, *hist_range, name=ax_name)
         else:
@@ -135,10 +136,18 @@ class Hist:
         self.hist_obj = hist.Hist(*axes, storage=hist.storage.Weight())
 
     def fill(self, events):
+        data=[split(events, var_path) for var_path in self.var_paths]
+        if self.func:
+            if isinstance(self.func, list):
+                assert len(self.func) == len(data), "Number of functions must be equal to the number of variables"
+                self.func=[func if func is not None else lambda x: x for func in self.func]
+                data = [f(d) for d, f in zip(data, self.func)]
+            else:
+                data = [self.func(d) for d in data]
         if self.fill_mode == "normal":
             # Used for normal histograms
             # Used in 3D for computing genmatch efficiency on objects with a score and WP depending on the online pt (score, genpt, onlinept)
-            data = [split_and_flat(events, var_path) for var_path in self.var_paths]
+            data = [ak.ravel(d) for d in data]
             weight = ak.drop_none(ak.ravel(self.weight)) if self.weight is not None else 1.
             self.hist_obj.fill(*data, weight=weight)
 
@@ -146,7 +155,6 @@ class Hist:
             freq_x_bx = 2760.0 * 11246 / 1000
             # Used for computing rate on objects without a score
             # data = [ pt, ...]
-            data = [split(events, var_path) for var_path in self.var_paths]
             n_ev = len(events)
 
             pt = data[0]
@@ -167,7 +175,6 @@ class Hist:
             # data = [online pt, score , ...]
             freq_x_bx = 2760.0 * 11246 / 1000
             assert self.dim >= 2, "rate_pt_vs_score mode requires at least 2 variables"
-            data = [split(events, var_path) for var_path in self.var_paths]
             n_ev = len(events)
             pt = data[0]
             score = data[1]
