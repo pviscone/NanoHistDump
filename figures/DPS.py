@@ -99,7 +99,7 @@ if save:
 
 etaeff15 = TEfficiency(
     name="eta_eff",
-    xlabel=r"$\eta^{\text{GEN}}$",
+    xlabel=r"$|\eta^{\text{GEN}}|$",
     xlim=(0, 1.479),
     ylim=(0, 1.15),
     rebin=1,
@@ -221,7 +221,7 @@ newmatcheff17 = TEfficiency(
 newmatcheff17.add(sig["CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label=r"Standalone $e/\gamma$")
 newmatcheff17.add(sig["TkGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label="L1 Track")
 newmatcheff17.add(
-    sig["TkCryCluGenMatch/CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label="Tk-matched electron\n(elliptic ID)"
+    sig["TkCryCluGenMatch/CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label="Tk-matched electron\n(Loose Elliptic ID)"
 )
 newmatcheff17.add_text(
     0.035,
@@ -236,7 +236,7 @@ newmatcheff17.add_text(
 newmatcheff17.ax.axhline(0.9, color="black", linestyle="--", linewidth=1, zorder=-99)
 newmatcheff17.ax.axhline(1, color="black", linestyle="--", linewidth=1, zorder=-99)
 if save:
-    newmatcheff17.save("DPS/slides17/oldmatcheff.pdf")
+    newmatcheff17.save("DPS/slides17/newmatcheff.pdf")
 
 
 # %%
@@ -427,10 +427,22 @@ scores20 = TH1(
     rebin=3,
     grid=False,
     ylabel="a.u.",
+    legendpos=(0.36, 0.92),
     # ylim=(1e-3, 10),
 )
 scores20.add(sig["TkCryCluGenMatch/ConiferScore01"], label="Signal")
 scores20.add(minbias["TkCryCluMatch/ConiferScore01"], label="Background")
+scores20.add_text(
+    0.035,
+    0.975,
+    r"Composite-ID candidates, $|\eta^{\text{L1}}|<1.479$",
+    fontsize=18,
+    ha="left",
+    va="top",
+    transform=scores20.ax.transAxes,
+    weight="bold",
+
+)
 if save:
     scores20.save("DPS/slides20/scores.pdf")
 
