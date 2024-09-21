@@ -4,6 +4,7 @@ from pathlib import Path
 import typer
 import uproot
 from rich import print as pprint
+import numpy as np
 
 
 def hadd(target: Path, files: list[Path]):
@@ -18,7 +19,12 @@ def hadd(target: Path, files: list[Path]):
     outfile=uproot.recreate(target)
     for key in hist_keys:
         hists=[f[key].to_hist() for f in files]
-        outfile[key]=sum(hists)
+        if "rate" in key:
+            n_evs=[np.max(np.nan_to_num(h.values()/h.variances(),0))*2760.0 * 11246 / 1000 for h in hists]
+            new_hists=[hists[i]*n_evs[i] for i in range(len(hists))]
+            outfile[key]=sum(new_hists)/sum(n_evs)
+        else:
+            outfile[key]=sum(hists)
     pprint("Done")
 
 
