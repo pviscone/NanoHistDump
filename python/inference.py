@@ -50,7 +50,7 @@ def xgb_wrapper(model, events, features=None, layout_template=None, conifer_mode
         if hlspreds.shape[1]>1:
             hlspreds = 1-softmax(hlspreds)[:,0]
         else:
-            hlspreds=(hlspreds/4).ravel()
+            hlspreds=(hlspreds).ravel()
         conifer_layout=copy.deepcopy(layout_template)
 
     if nested:

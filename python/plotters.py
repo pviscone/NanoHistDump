@@ -244,12 +244,13 @@ class TH2(BasePlotter):
 
 
 class TEfficiency(BasePlotter):
-    def __init__(self, yerr=True, xerr=False, ylabel="Efficiency", step=True, fillerr=False, *args, **kwargs):
+    def __init__(self, yerr=True, xerr=False, ylabel="Efficiency", step=True, fillerr=False, avxalpha=0.15, *args, **kwargs):
         super().__init__(*args, ylabel=ylabel, **kwargs)
         self.yerr = yerr
         self.xerr = xerr
         self.step = step
         self.fillerr = fillerr
+        self.avxalpha = avxalpha
 
     @merge_kwargs(linewidth=3, markeredgecolor="Black", markersize=0, errcapsize=3, errlinewidth=2, errzorder=-99, fillalpha=0.3)
     def add(self, num, den, **kwargs):
@@ -297,7 +298,7 @@ class TEfficiency(BasePlotter):
                 integrated = numhist3d.integrate(2, loc(minpt), loc(maxpt))
                 temp_h = integrated.integrate(0, loc(thr), None)
                 hist += temp_h
-                self.ax.axvline(minpt, color="red", linestyle="--", linewidth=1.25, zorder=-2, alpha=0.6)
+                self.ax.axvline(minpt, color="red", linestyle="--", linewidth=1.25, zorder=-10, alpha=self.avxalpha)
         elif isinstance(ptedges_thr, Number):
             hist = numhist3d.integrate(2).integrate(0, loc(ptedges_thr), None)
 
@@ -305,11 +306,12 @@ class TEfficiency(BasePlotter):
 
 
 class TRate(BasePlotter):
-    def __init__(self, *args, yerr=True, fillerr=False, log="y", ylabel="Rate [kHz]", **kwargs):
+    def __init__(self, *args, yerr=True, fillerr=False, log="y", ylabel="Rate [kHz]", avxalpha=0.15, **kwargs):
         super().__init__(*args, log=log, ylabel=ylabel, **kwargs)
         self.freq_x_bx = 2760.0 * 11246 / 1000
         self.yerr = yerr
         self.fillerr = fillerr
+        self.avxalpha = avxalpha
 
     @merge_kwargs(markeredgecolor="black", markersize=7, linewidth=3, errcapsize=2, errlinewidth=1, errzorder=-99, fillalpha=0.3)
     def add(self, hist, **kwargs):
@@ -354,7 +356,7 @@ class TRate(BasePlotter):
                     idx_mask = np.bitwise_and(hist2d.axes[0].centers > minpt, hist2d.axes[0].centers < maxpt)
                     mask[~idx_mask] = 0
                     hist += hist2d[:, loc(thr)] * mask
-                    self.ax.axvline(minpt, color="red", linestyle="--", linewidth=1, alpha=0.8, zorder=-2)
+                    self.ax.axvline(minpt, color="red", linestyle="--", linewidth=1, alpha=self.avxalpha, zorder=-10)
             elif isinstance(ptedges_thr, Number):
                 hist = hist2d[:, loc(ptedges_thr)]
 

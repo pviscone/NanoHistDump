@@ -98,7 +98,7 @@ def define(events, sample_name):
 
         #!-------------------Tk-Gen Matching-------------------!#
         events["TkGenMatch"] = elliptic_match(
-            events.GenEle, events.Tk, etaphi_vars=[["caloeta", "calophi"], ["caloEta", "caloPhi"]], ellipse=0.1
+            events.GenEle, events.Tk, ellipse=[[0.13, 0.4]]
         )
         mindpt_mask = ak.argmin(np.abs(events["TkGenMatch"].dPt), axis=2, keepdims=True)
 
@@ -108,7 +108,7 @@ def define(events, sample_name):
         events["OldTk"]=events.Tk[events.Tk.pt>10]
         set_name(events.OldTk, "Tk")
         events["OldTkGenMatch"] = elliptic_match(
-            events.GenEle, events.OldTk, ellipse=0.1
+            events.GenEle, events.OldTk, ellipse=0.2
         )
         mindpt_mask = ak.argmin(np.abs(events["OldTkGenMatch"].dPt), axis=2, keepdims=True)
 
@@ -135,7 +135,6 @@ def define(events, sample_name):
             conifer_model=conifer_model,
             layout_template=events.TkCryCluGenMatch.PtRatio.layout,
         )
-
         #!-------------------BDT selection-------------------!#
         maxbdt_mask = ak.argmax(events["TkCryCluGenMatch"].BDTscore, axis=2, keepdims=True)
         events["TkCryCluGenMatch"] = ak.flatten(events["TkCryCluGenMatch"][maxbdt_mask], axis=2)
@@ -176,8 +175,6 @@ def get_hists(sample_name):
                 fill_mode="rate_pt_vs_score",
                 name="TkCryCluMatch/rate_pt_vs_coniferscore",
             ),
-            Hist("TkCryCluMatch~ConiferScore", bins=conifer_bins),
-
 
             #!-------------------Features weighted-------------------!#
             #pt
@@ -213,6 +210,10 @@ def get_hists(sample_name):
             Hist("TkCryCluMatch~dPhi", name="feat/abs_dPhi", func=lambda x: np.abs(x), bins=np.linspace(-0.5,0.5,101)),
             Hist("TkCryCluMatch~nMatch", name="feat/nMatch", bins=np.linspace(0,10,11)),
             Hist("TkCryCluMatch/Tk~chi2RPhi", bins=np.linspace(0,200,201), name="feat/Tk_chi2RPhi"),
+
+            #!-------------------BDT-------------------!#
+            Hist("TkCryCluMatch~ConiferScore", bins=conifer_bins),
+            Hist("TkCryCluMatch~ConiferScore", name="TkCryCluMatch/ConiferScore01", bins=bdt_bins, func=lambda x: 1/(1+np.exp(-x))),
         ]
     # signal
     elif "PU200" in sample_name:
@@ -268,9 +269,10 @@ def get_hists(sample_name):
             Hist("TkCryCluGenMatch~dPhi", name="feat/abs_dPhi", func=lambda x: np.abs(x), bins=np.linspace(-0.5,0.5,101)),
             Hist("TkCryCluGenMatch~nMatch", name="feat/nMatch", bins=np.linspace(0,10,11)),
             Hist("TkCryCluGenMatch/Tk~chi2RPhi", bins=np.linspace(0,200,201), name="feat/Tk_chi2RPhi"),
-
-            #Other
+            #!-------------------BDT-------------------!#
+            Hist("TkCryCluGenMatch~BDTscore", bins=bdt_bins),
             Hist("TkCryCluGenMatch~ConiferScore", bins=conifer_bins),
+            Hist("TkCryCluGenMatch~ConiferScore", name="TkCryCluGenMatch/ConiferScore01", bins=bdt_bins, func=lambda x: 1/(1+np.exp(-x))),
         ]
     elif "PU0" in sample_name:
         hists+=[
