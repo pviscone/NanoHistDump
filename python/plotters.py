@@ -52,7 +52,6 @@ hep.styles.cms.CMS["legend.frameon"] = True
 hep.styles.cms.CMS["figure.autolayout"] = True
 hep.style.use(hep.style.CMS)
 
-
 def merge_kwargs(**decorator_kwargs):
     def decorator(method):
         @wraps(method)
@@ -93,6 +92,10 @@ def set_palette(palette):
     hep.styles.cms.CMS["axes.prop_cycle"] = cycler("color", palette)
     hep.style.use(hep.style.CMS)
 
+def set_style(key, value):
+    hep.styles.cms.CMS[key] = value
+    hep.style.use(hep.style.CMS)
+
 class BasePlotter:
     def __init__(
         self,
@@ -108,6 +111,9 @@ class BasePlotter:
         ylabel="",
         lumitext="PU 200",
         cmstext="Phase-2 Simulation",
+        cmstextsize=None,
+        lumitextsize=None,
+        legendpos=None,
         cmsloc=0,
         rebin=1,
         **kwargs,
@@ -123,8 +129,8 @@ class BasePlotter:
         self.lumitext = lumitext
         self.cmstext = cmstext
 
-        hep.cms.text(self.cmstext, ax=self.ax, loc=cmsloc)
-        hep.cms.lumitext(self.lumitext, ax=self.ax)
+        hep.cms.text(self.cmstext, ax=self.ax, loc=cmsloc, fontsize=cmstextsize)
+        hep.cms.lumitext(self.lumitext, ax=self.ax, fontsize=lumitextsize)
         self.lazy_args = []
 
         self.ax.set_xlabel(xlabel)
@@ -158,6 +164,8 @@ class BasePlotter:
         else:
             self.rebin = [Rebin(r) for r in rebin]
 
+        self.legendpos = legendpos
+
     def add_text(self, *args, **kwargs):
         self.ax.text(*args, **kwargs)
 
@@ -169,7 +177,7 @@ class BasePlotter:
         else:
             self.ax.plot(x, y, **kwargs)
         sys.stderr = open(os.devnull, "w")
-        self.ax.legend()
+        self.ax.legend(bbox_to_anchor=self.legendpos)
         sys.stderr = sys.__stderr__
 
     def save(self, filename, *args, **kwargs):
@@ -212,7 +220,7 @@ class TH1(BasePlotter):
         hist = hist[self.rebin]
         hep.histplot(hist, ax=self.ax, clip_on=True, **kwargs)
         sys.stderr = open(os.devnull, "w")
-        self.ax.legend()
+        self.ax.legend(bbox_to_anchor=self.legendpos)
         sys.stderr = sys.__stderr__
 
         if kwargs.get("histtype") == "fill":
@@ -231,7 +239,7 @@ class TH2(BasePlotter):
             kwargs["norm"] = colors.LogNorm(vmin=self.zlim[0], vmax=self.zlim[1])
         hep.hist2dplot(hist, ax=self.ax, **kwargs)
         sys.stderr = open(os.devnull, "w")
-        self.ax.legend()
+        self.ax.legend(bbox_to_anchor=self.legendpos)
         sys.stderr = sys.__stderr__
 
 
@@ -274,7 +282,7 @@ class TEfficiency(BasePlotter):
                 self.ax.errorbar(centers, eff, yerr=err, xerr=xerr, fmt="none", color=self.ax.lines[-1].get_color(), **err_kwargs)
 
         sys.stderr = open(os.devnull, "w")
-        self.ax.legend()
+        self.ax.legend(bbox_to_anchor=self.legendpos)
         sys.stderr = sys.__stderr__
 
     @merge_kwargs()
@@ -317,8 +325,8 @@ class TRate(BasePlotter):
             if len(self.markers_copy) == 0:
                 self.markers_copy = self.markers.copy()
 
-        n_ev=(values/variances)[0]*self.freq_x_bx
-        n_bin=(values**2/variances)
+        n_ev=int((values/variances)[0]*self.freq_x_bx)
+        n_bin=np.array(values**2/variances, dtype=int)
         rate=values
         self.ax.plot(centers, rate, **kwargs)
         if self.yerr:
@@ -330,7 +338,7 @@ class TRate(BasePlotter):
                 self.ax.errorbar(centers, rate, yerr=err, xerr=xerr, fmt="none", color=self.ax.lines[-1].get_color(), **err_kwargs)
 
         sys.stderr = open(os.devnull, "w")
-        self.ax.legend()
+        self.ax.legend(bbox_to_anchor=self.legendpos)
         sys.stderr = sys.__stderr__
 
     @merge_kwargs(markeredgecolor="black", markersize=10)
