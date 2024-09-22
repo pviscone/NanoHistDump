@@ -58,7 +58,7 @@ os.environ["XILINX_AP_INCLUDE"] = "/opt/Xilinx/Vitis_HLS/2023.1/include"
 os.environ["JSON_ROOT"] = "/afs/cern.ch/work/p/pviscone/conifer"
 
 #!----------------------CFG----------------------!#
-backend = "cpp"
+backend = "vivado"
 score_precision = "ap_fixed<12,4,AP_RND_CONV,AP_SAT>"
 input_precision = "ap_fixed<24,9,AP_RND_CONV,AP_SAT>"
 threshold_precision = "ap_fixed<24,9,AP_RND_CONV,AP_SAT>"
@@ -68,6 +68,7 @@ if backend == "vivado":
     cfg["input_precision"] = input_precision
     cfg["threshold_precision"] = threshold_precision
     cfg["score_precision"] = score_precision
+    cfg["ClockPeriod"] = 5.56
 
 
 elif backend == "py":
