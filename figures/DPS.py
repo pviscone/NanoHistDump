@@ -221,7 +221,7 @@ newmatcheff17 = TEfficiency(
 newmatcheff17.add(sig["CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label=r"Standalone $e/\gamma$")
 newmatcheff17.add(sig["TkGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label="L1 Track")
 newmatcheff17.add(
-    sig["TkCryCluGenMatch/CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label="Tk-matched electron\n(Loose Elliptic ID)"
+    sig["TkCryCluGenMatch/CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label="Tk-matched electron\n(Loose Elliptic match)"
 )
 newmatcheff17.add_text(
     0.035,
@@ -485,7 +485,7 @@ pteff = TEfficiency(
     avxalpha=0,
 )
 pteff.add(sig["CryCluGenMatch/GenEle/pt"], genpt, label=r"Standalone $e/\gamma$")
-pteff.add(sig["TkCryCluGenMatch/CryCluGenMatch/GenEle/pt"], genpt, label="Loose elliptic ID")
+pteff.add(sig["TkCryCluGenMatch/CryCluGenMatch/GenEle/pt"], genpt, label="Loose Elliptic match")
 
 pteff.add_scoreCuts(xgbscore_genpt_cryclupt, genpt, [pt_edges, thr_tkEleEff], label="Composite ID TightWP")
 pteff.add_scoreCuts(xgbscore_genpt_cryclupt, genpt, [pt_edges, thr_tkEleRate], label="Composite ID LooseWP")
@@ -544,7 +544,7 @@ standrate = minbias["CryClu/rate_vs_ptcut;1"].to_hist()
 
 rate.add(standrate, label=r"Standalone $e/\gamma$")
 
-rate.add(minbias["TkCryCluMatch/rate_vs_ptcut;1"], label="Loose elliptic ID")
+rate.add(minbias["TkCryCluMatch/rate_vs_ptcut;1"], label="Loose Elliptic match")
 
 rate.add_scoreCuts(h2rate, [pt_edges, thr_tkEleEff], label="Composite ID TightWP")
 rate.add_scoreCuts(h2rate, [pt_edges, thr_tkEleRate], label="Composite ID LooseWP")
