@@ -39,7 +39,7 @@ rate15 = TRate(
     lumitext="14 TeV, 200 PU",
     grid=False,
 )
-rate15.add(minbias["CryClu/rate_vs_ptcut"], label=r"Standalone $e/\gamma$")
+rate15.add(minbias["TkEm/rate_vs_ptcut"], label=r"Standalone $e/\gamma$")
 rate15.add(minbias["TkEle/rate_vs_ptcut"], label=r"Tk-matched electron")
 rate15.add_text(
     0.035,
@@ -79,7 +79,7 @@ pteff15 = TEfficiency(
     lumitext="14 TeV, 200 PU",
     grid=False,
 )
-pteff15.add(sig["CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label=r"Standalone $e/\gamma$")
+pteff15.add(sig["TkEmGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label=r"Standalone $e/\gamma$")
 pteff15.add(sig["TkEleGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label="Tk-matched electron")
 pteff15.add_text(
     0.035,
@@ -111,7 +111,7 @@ etaeff15 = TEfficiency(
     lumitext="14 TeV, 200 PU",
     grid=False,
 )
-etaeff15.add(sig["CryCluGenMatch/GenEle/eta"], sig["GenEle/eta;1"], label=r"Standalone $e/\gamma$")
+etaeff15.add(sig["TkEmGenMatch/GenEle/eta"], sig["GenEle/eta;1"], label=r"Standalone $e/\gamma$")
 etaeff15.add(sig["TkEleGenMatch/GenEle/eta"], sig["GenEle/eta;1"], label="Tk-matched electron")
 etaeff15.add_text(
     0.035,
@@ -143,7 +143,7 @@ oldmatcheff16 = TEfficiency(
     lumitext="14 TeV, 200 PU",
     grid=False,
 )
-oldmatcheff16.add(sig["CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label=r"Standalone $e/\gamma$")
+oldmatcheff16.add(sig["CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label=r"Calo Clusters")
 oldmatcheff16.add(sig["OldTkGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label="L1 Track\n($p_T^{\\text{Tk}}>10$ GeV)")
 oldmatcheff16.add(sig["TkEleGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label="Tk-matched electron\n(elliptic ID)")
 oldmatcheff16.add_text(
@@ -218,7 +218,7 @@ newmatcheff17 = TEfficiency(
     lumitext="14 TeV, 200 PU",
     grid=False,
 )
-newmatcheff17.add(sig["CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label=r"Standalone $e/\gamma$")
+newmatcheff17.add(sig["CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label=r"Calo Clusters")
 newmatcheff17.add(sig["TkGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label="L1 Track")
 newmatcheff17.add(
     sig["TkCryCluGenMatch/CryCluGenMatch/GenEle/pt"], sig["GenEle/pt;1"], label="Tk-matched electron\n(Loose Elliptic match)"
@@ -484,22 +484,21 @@ pteff = TEfficiency(
     grid=False,
     avxalpha=0,
 )
-pteff.add(sig["CryCluGenMatch/GenEle/pt"], genpt, label=r"Standalone $e/\gamma$")
-pteff.add(sig["TkCryCluGenMatch/CryCluGenMatch/GenEle/pt"], genpt, label="Loose Elliptic match")
 
-pteff.add_scoreCuts(xgbscore_genpt_cryclupt, genpt, [pt_edges, thr_tkEleEff], label="Composite ID TightWP")
-pteff.add_scoreCuts(xgbscore_genpt_cryclupt, genpt, [pt_edges, thr_tkEleRate], label="Composite ID LooseWP")
+
 
 outline = mpe.withStroke(linewidth=1, foreground="black")
 pteff.add(
     sig["TkEleGenMatch/GenEle/pt;1"].to_hist(),
     genpt,
-    label="Elliptic ID",
+    label="Tk-matched electron\n(Elliptic ID)",
     linestyle="--",
     linewidth=2,
     zorder=10,
     path_effects=[outline],
 )
+pteff.add_scoreCuts(xgbscore_genpt_cryclupt, genpt, [pt_edges, thr_tkEleRate], label="Tk-matched electron\n(Composite ID LooseWP)")
+
 pteff.add_text(
     0.035,
     0.975,
@@ -542,14 +541,11 @@ tkelerate = minbias["TkEle/rate_vs_ptcut;1"].to_hist()
 standrate = minbias["CryClu/rate_vs_ptcut;1"].to_hist()
 
 
-rate.add(standrate, label=r"Standalone $e/\gamma$")
 
-rate.add(minbias["TkCryCluMatch/rate_vs_ptcut;1"], label="Loose Elliptic match")
 
-rate.add_scoreCuts(h2rate, [pt_edges, thr_tkEleEff], label="Composite ID TightWP")
-rate.add_scoreCuts(h2rate, [pt_edges, thr_tkEleRate], label="Composite ID LooseWP")
 outline = mpe.withStroke(linewidth=4, foreground="black")
-rate.add(tkelerate, label="Elliptic ID")
+rate.add(tkelerate, label="Tk-matched electron\n(Elliptic ID)")
+rate.add_scoreCuts(h2rate, [pt_edges, thr_tkEleRate], label="Tk-matched electron\n(Composite ID LooseWP)")
 rate.add_text(
     0.035,
     0.975,
@@ -562,5 +558,160 @@ rate.add_text(
 )
 if save:
     rate.save("DPS/slides21/rate.pdf")
+
+# %%
+
+
+# %%
+#! ---------------- Slide 22 ---------------- !#
+
+mplt.set_palette(mplt.acab_palette)
+pt_edges = [20, 30, 50, 150]
+
+thr_tkEleEff_dict = {"xgb": [1, 0.95, 0.57, 0.58, 0.55, 0.73], "conifer": [-0.1, -0.2, 0.15]}
+
+thr_tkEleRate_dict = {"xgb": [0.77, 0.59, 0.3, 0.2, 0.12, 0.27], "conifer": [-0.45, -0.5, -0.38]}
+
+library = "conifer"
+thr_tkEleEff = np.array(thr_tkEleEff_dict[library]) * 4
+thr_tkEleRate = np.array(thr_tkEleRate_dict[library]) * 4
+
+
+#!-------------------pt-------------------!#
+xgbscore_genpt_cryclupt = sig[f"TkCryCluGenMatch/{library}score_vs_genpt_vs_cryclupt"].to_hist()
+genpt = sig["GenEle/pt;1"].to_hist()
+
+tkelept=sig["TkEleGenMatch/genpt_vs_tkelept"].to_hist().integrate(1,hist.loc(31.5),None)
+
+pteff = TEfficiency(
+    name="pt_eff",
+    xlabel=r"$p_{T}^{\text{GEN}}$ [GeV]",
+    xlim=(0, 100),
+    ylim=(0, 1.15),
+    rebin=2,
+    markersize=7.5,
+    cmstext="Phase-2 Simulation Preliminary",
+    cmstextsize=22,
+    lumitextsize=22,
+    legendpos=(0.35, 0.4),
+    lumitext="14 TeV, 200 PU",
+    linewidth=2,
+    ylabel="Efficiency @ 18.3 kHz",
+    grid=False,
+    avxalpha=0,
+)
+
+
+
+
+outline = mpe.withStroke(linewidth=1, foreground="black")
+pteff.add(
+    tkelept,
+    genpt,
+    label="Tk-matched electron\n(Elliptic ID)\n$p_T^{\\text{L1}}>31.5$ GeV",
+    linestyle="--",
+    linewidth=2,
+    zorder=10,
+    path_effects=[outline],
+)
+#
+
+
+pt_edges = [31.5, 50, 150]
+
+thr_tkEleEff_dict = {"xgb": [1, 0.95, 0.57, 0.58, 0.55, 0.73], "conifer": [ -0.2, 0.15]}
+
+thr_tkEleRate_dict = {"xgb": [0.77, 0.59, 0.3, 0.2, 0.12, 0.27], "conifer": [-0.45, -0.5, -0.38]}
+
+library = "conifer"
+thr_tkEleEff = np.array(thr_tkEleEff_dict[library]) * 4
+thr_tkEleRate = np.array(thr_tkEleRate_dict[library]) * 4
+
+pteff.add_scoreCuts(xgbscore_genpt_cryclupt, genpt, [pt_edges, thr_tkEleRate], label="Tk-matched electron\n(Composite ID LooseWP)\n$p_T^{\\text{L1}}>31.5$ GeV")
+
+pt_edges = [23.5, 30, 50, 150]
+
+thr_tkEleEff_dict = {"xgb": [1, 0.95, 0.57, 0.58, 0.55, 0.73], "conifer": [-0.1, -0.2, 0.15]}
+
+thr_tkEleRate_dict = {"xgb": [0.77, 0.59, 0.3, 0.2, 0.12, 0.27], "conifer": [-0.45, -0.5, -0.38]}
+
+library = "conifer"
+thr_tkEleEff = np.array(thr_tkEleEff_dict[library]) * 4
+thr_tkEleRate = np.array(thr_tkEleRate_dict[library]) * 4
+
+
+pteff.add_scoreCuts(xgbscore_genpt_cryclupt, genpt, [pt_edges, thr_tkEleEff], label="Tk-matched electron\n(Composite ID TightWP)\n$p_T^{\\text{L1}}>23.5$ GeV")
+
+
+pteff.add_text(
+    0.035,
+    0.975,
+    r"flat-$p_T$ electrons, $|\eta^{\text{L1}}|<1.479$",
+    fontsize=18,
+    ha="left",
+    va="top",
+    transform=pteff.ax.transAxes,
+    weight="bold",
+)
+pteff.ax.axhline(0.9, color="black", linestyle="--", linewidth=1, zorder=-99)
+pteff.ax.axhline(1, color="black", linestyle="--", linewidth=1, zorder=-99)
+
+if save:
+    pteff.save("DPS/slides22/pteff.pdf")
+
+# %%
+
+
+#!-------------------rate-------------------!#
+pt_edges = [0, 5, 10, 20, 30, 50, 150]
+
+thr_tkEleEff_dict = {"xgb": [1, 0.95, 0.57, 0.58, 0.55, 0.73], "conifer": [8, 8, 0.05, -0.1, -0.2, 0.15]}
+
+thr_tkEleRate_dict = {"xgb": [0.77, 0.59, 0.3, 0.2, 0.12, 0.27], "conifer": [0.19, 0.05, -0.35, -0.45, -0.5, -0.38]}
+
+library = "conifer"
+thr_tkEleEff = np.array(thr_tkEleEff_dict[library]) * 4
+thr_tkEleRate = np.array(thr_tkEleRate_dict[library]) * 4
+
+
+rate = TRate(
+    name="rate_vs_pt",
+    xlabel="Online $p_T$ thresh. [GeV]",
+    ylabel="Rate [kHz]",
+    xlim=(0, 60),
+    ylim=(1, 1e5),
+    fillerr=False,
+    linewidth=0,
+    markersize=7.5,
+    cmstext="Phase-2 Simulation Preliminary",
+    cmstextsize=22,
+    lumitextsize=22,
+    legendpos=(0.35, 0.9),
+    lumitext="14 TeV, 200 PU",
+    grid=False,
+    avxalpha=0
+)
+h2rate = minbias[f"TkCryCluMatch/rate_pt_vs_{library}score;1"].to_hist()
+tkelerate = minbias["TkEle/rate_vs_ptcut;1"].to_hist()
+standrate = minbias["CryClu/rate_vs_ptcut;1"].to_hist()
+
+outline = mpe.withStroke(linewidth=4, foreground="black")
+rate.add(tkelerate, label="Tk-matched electron\n(Elliptic ID)")
+rate.add_scoreCuts(h2rate, [pt_edges, thr_tkEleRate], label="Tk-matched electron\n(Composite ID LooseWP)")
+rate.add_scoreCuts(h2rate, [pt_edges, thr_tkEleEff], label="Tk-matched electron\n(Composite ID TightWP)")
+
+rate.add_text(
+    0.035,
+    0.975,
+    r"Minimum-Bias $|\eta^{\text{L1}}|<1.479$",
+    fontsize=18,
+    ha="left",
+    va="top",
+    transform=rate.ax.transAxes,
+    weight="bold",
+)
+rate.ax.axhline(18.24, color="black", linestyle="--", linewidth=1, zorder=-99)
+if save:
+    rate.save("DPS/slides22/rate.pdf")
 
 # %%

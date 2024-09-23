@@ -33,7 +33,7 @@ features = [
 
 features_signal = ["CryCluGenMatch_" + feat if feat.startswith("CryClu") else feat for feat in features]
 
-to_read = ["Tk", "CryClu", "GenEle", "TkEle"]
+to_read = ["Tk", "CryClu", "GenEle", "TkEle", "TkEm"]
 
 def define(events, sample_name):
     #!-------------------TkEle -------------------!#
@@ -42,6 +42,13 @@ def define(events, sample_name):
     mask_tight_ele = 0b0010
     events["TkEle", "IDTightEle"] = np.bitwise_and(events["TkEle"].hwQual, mask_tight_ele) > 0
     events["TkEle"] = events.TkEle[events.TkEle.IDTightEle]
+
+    #!-------------------TkEm -------------------!#
+    events["TkEm"] = events.TkEm[np.abs(events.TkEm.eta) < BarrelEta]
+    events["TkEm", "hwQual"] = ak.values_astype(events["TkEm"].hwQual, np.int32)
+    mask_tight_ele = 0b0010
+    events["TkEm", "IDTightEle"] = np.bitwise_and(events["TkEm"].hwQual, mask_tight_ele) > 0
+    events["TkEm"] = events.TkEm[events.TkEm.IDTightEle]
 
 
     #!-------------------New vars------------------!#
@@ -146,6 +153,13 @@ def define(events, sample_name):
         mindpt_mask = ak.argmin(np.abs(events["TkEleGenMatch"].dPt), axis=2, keepdims=True)
         events["TkEleGenMatch"] = ak.flatten(events["TkEleGenMatch"][mindpt_mask], axis=2)
 
+        #!-------------------TkEm-Gen Matching-------------------!#
+        events["TkEmGenMatch"] = elliptic_match(
+        events.GenEle, events.TkEm, etaphi_vars=[["caloeta", "calophi"], ["eta", "phi"]], ellipse=0.1
+        )
+        mindpt_mask = ak.argmin(np.abs(events["TkEmGenMatch"].dPt), axis=2, keepdims=True)
+        events["TkEmGenMatch"] = ak.flatten(events["TkEmGenMatch"][mindpt_mask], axis=2)
+
 
     return events
 
@@ -163,6 +177,7 @@ def get_hists(sample_name):
             Hist("TkCryCluMatch/CryClu~pt", bins=pt_bins),
             # TkEle
             Hist("TkEle~pt", bins=pt_bins, fill_mode="rate_vs_ptcut"),
+            Hist("TkEm~pt", bins=pt_bins, fill_mode="rate_vs_ptcut"),
             # CryClu
             Hist("CryClu~pt", bins=pt_bins, fill_mode="rate_vs_ptcut"),
             # new tkele Rate
@@ -229,6 +244,14 @@ def get_hists(sample_name):
                 bins=[conifer_bins, pt_bins, pt_bins],
                 name="TkCryCluGenMatch/coniferscore_vs_genpt_vs_cryclupt",
             ),
+            Hist(
+                [
+                    "TkEleGenMatch/GenEle~pt",
+                    "TkEleGenMatch/TkEle~pt",
+                ],
+                bins=[pt_bins, pt_bins],
+                name="TkEleGenMatch/genpt_vs_tkelept",
+            ),
             #eta
             Hist(
                 [
@@ -252,6 +275,8 @@ def get_hists(sample_name):
             Hist("TkCryCluGenMatch/CryCluGenMatch/GenEle~eta", bins=eta_bins, func=lambda x: np.abs(x)),
             Hist("TkEleGenMatch/GenEle~pt", bins=pt_bins),
             Hist("TkEleGenMatch/GenEle~eta", bins=eta_bins, func=lambda x: np.abs(x)),
+            Hist("TkEmGenMatch/GenEle~pt", bins=pt_bins),
+            Hist("TkEmGenMatch/GenEle~eta", bins=eta_bins, func=lambda x: np.abs(x)),
 
             #!-------------------Features-------------------!#
             #pt
