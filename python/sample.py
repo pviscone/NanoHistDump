@@ -85,10 +85,12 @@ class Sample:
 
         """
         if events is None:
-            if ".root" not in path:
+            if isinstance(path, str) and ".root" not in path:
                 list_files = glob.glob(os.path.join(path, "*.root"))
-            else:
+            elif isinstance(path, str):
                 list_files = [path]
+            elif isinstance(path, list):
+                list_files = path
 
             dask_events = NanoEventsFactory.from_root(
                 [{file: tree_name} for file in list_files],

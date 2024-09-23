@@ -49,6 +49,7 @@ def NanoHistDump(
     collections: str = typer.Option(None, "-c", "--collections", help="collections to be read. separate by commas"),
     debug: bool = typer.Option(False, "-d", "--debug", help="print debug information"),
     ncpu: int = typer.Option(1, "-j", "--ncpu", help="number of cpus to use (-1 to use all available cpus)"),
+    nfiles: int = typer.Option(-1, "-F", "--nfiles", help="number of files to use (-1 to use all available cpus)"),
 ):
     def parse_yaml(filename):
         with open(filename) as stream:
@@ -98,6 +99,8 @@ def NanoHistDump(
 
         if ncpu > 1:
             files = glob.glob(os.path.join(path, "*.root"))
+            if nfiles > 0:
+                files = files[:nfiles]
             tmp_dir = os.path.abspath(os.path.join(out_dir, f"{sample_name}_tmp"))
             dataset_config["out_dir"] = tmp_dir
             os.system(f"rm -rf {tmp_dir}")
@@ -108,12 +111,14 @@ def NanoHistDump(
                 files,
                 ncpu=ncpu,
             )
-            basepath=os.path.dirname(os.path.realpath(__file__))
+            basepath = os.path.dirname(os.path.realpath(__file__))
             os.system(
                 f"python {basepath}/python/hadd.py {tmp_dir}/../{config_file.split('/')[-1].split('.py')[0]}_{sample_name}_{dataset_config['tag']}.root {tmp_dir}/*.root"
             )
             os.system(f"rm -rf {tmp_dir}")
         else:
+            if isinstance(path, str) and ".root" not in path and nfiles > 0:
+                path=glob.glob(os.path.join(path, "*.root"))[:nfiles]
             _run(sample_name, path, dataset_config, schema, nevents, debug, config_file)
 
 
