@@ -198,17 +198,22 @@ class Sample:
         if self.hist_file is None:
             raise ValueError("No histogram created. Create one first")
         for h in hists:
-            try:
+            if self.debug>=2:
                 to_add = h.add_hist(self.events,verbose=verbose)
                 self.hist_file[h.name] = to_add
 
-            except Exception as error:
-                pprint(f"\nError creating hist {h.var_paths}\n")
-                self.errors[f"{h.var_paths}"] = error
-                print(error)
-                if self.debug:
-                    import traceback
-                    print(traceback.format_exc())
+            if self.debug<2:
+                try:
+                    to_add = h.add_hist(self.events,verbose=verbose)
+                    self.hist_file[h.name] = to_add
+
+                except Exception as error:
+                    pprint(f"\nError creating hist {h.var_paths}\n")
+                    self.errors[f"{h.var_paths}"] = error
+                    print(error)
+                    if self.debug>0:
+                        import traceback
+                        print(traceback.format_exc())
 
     def hist_report(self, verbose=True):
         n_errors = len(self.errors)

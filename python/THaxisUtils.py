@@ -36,8 +36,11 @@ def split(events, var_path):
     var_path = var_path.split("[")[0]
     collection_name = var_path.split("~")[0]
     var_name = var_path.split("~")[1]
-    names = collection_name.split("/")
-    data = getattr(events[*names],var_name)
+    if collection_name!="":
+        names = collection_name.split("/")
+        data = getattr(events[*names],var_name)
+    else:
+        data = getattr(events,var_name)
     data = data[:,*idxs]
     return ak.drop_none(data)
 

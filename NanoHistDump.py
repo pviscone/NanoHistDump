@@ -47,10 +47,11 @@ def NanoHistDump(
     out_dir: str = typer.Option(None, "-o", "--out_dir", help="override the output directory for the files"),
     nevents: int = typer.Option(None, "-n", "--nevents", help="number of events to process per sample (default all)"),
     collections: str = typer.Option(None, "-c", "--collections", help="collections to be read. separate by commas"),
-    debug: bool = typer.Option(False, "-d", "--debug", help="print debug information"),
+    debug: int = typer.Option(0, "-d", "--debug", help="print debug information (0 deactivated, 1 enable traceback, 2 stop on error)"),
     ncpu: int = typer.Option(1, "-j", "--ncpu", help="number of cpus to use (-1 to use all available cpus)"),
     nfiles: int = typer.Option(-1, "-F", "--nfiles", help="number of files to use (-1 to use all available cpus)"),
 ):
+
     def parse_yaml(filename):
         with open(filename) as stream:
             return yaml.load(stream, Loader=yaml.FullLoader)
@@ -96,6 +97,7 @@ def NanoHistDump(
         path = os.path.join(base_path, sample_dir)
 
         pprint(f"------------------------- #{idx+1}/{len(samples_config)} {sample_name}-------------------------")
+        #Definisci file qua, splitta su, glob e nfiles
 
         if ncpu > 1:
             files = glob.glob(os.path.join(path, "*.root"))
